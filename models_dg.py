@@ -110,11 +110,101 @@ class ExampleModel(GeneralModel):
         )
 
         # Train the model and save its history
+        validation_data = None if X_val or y_val is None else (X_val, y_val)
+        self.history = self.model.fit(
+            x=X_train,
+            y=y_train,
+            batch_size=self.batch_size,
+            epochs=self.epochs,
+            validation_data=validation_data,
+            callbacks=[early_stopping],
+        ).history
+
+
+class XceptionModel(GeneralModel):
+    """
+    Transfer learning model based on Xception.
+    """
+
+    def __init__(
+        self,
+        name,
+        input_shape,
+        output_shape,
+        epochs=20,
+        batch_size=32,
+        patience=5,
+        seed=SEED,
+    ):
+        super().__init__()
+        self.name = name
+        self.input_shape = input_shape
+        self.output_shape = output_shape
+        self.epochs = epochs
+        self.batch_size = batch_size
+        self.patience = patience
+        self.seed = seed
+        self.model = None
+        self.history = None
+
+    def build(self):
+        """
+        Definition and building of the model
+        """
+        tf.random.set_seed(self.seed)
+
+        data_augmentation = tfk.Sequential(
+            [
+                tfkl.RandomFlip("horizontal"),
+                tfkl.RandomRotation(0.1),
+            ]
+        )
+
+        base_model = tfk.applications.Xception(
+            weights="imagenet",  # Load weights pre-trained on ImageNet.
+            input_shape=self.input_shape,
+            include_top=False,
+        )  # Do not include the ImageNet classifier at the top.
+
+        # Create new model on top
+        inputs = tfkl.Input(shape=self.input_shape, name="Input")
+        x = data_augmentation(inputs)  # Apply random data augmentation
+
+        # Pre-trained Xception weights requires that input be scaled
+        # from (0, 255) to a range of (-1., +1.), the rescaling layer
+        # outputs: `(inputs * scale) + offset`
+        scale_layer = tfkl.Rescaling(scale=1 / 127.5, offset=-1)
+        x = scale_layer(x)
+
+        # The base model contains batchnorm layers. We want to keep them in inference mode
+        # when we unfreeze the base model for fine-tuning, so we make sure that the
+        # base_model is running in inference mode here.
+        x = base_model(x, training=False)
+        x = tfkl.GlobalAveragePooling2D()(x)
+        x = tfkl.Dropout(0.2)(x)  # Regularize with dropout
+        outputs = tfkl.Dense(1)(x)
+        self.model = tfk.Model(inputs, outputs)
+
+    def compile(self):
+        """
+        Compile the model
+        """
+        self.model.compile(
+            loss=tfk.losses.BinaryCrossentropy(from_logits=True),
+            optimizer=tfk.optimizers.Adam(),
+            metrics=[tfk.metrics.BinaryAccuracy()],
+        )
+
+    def train(self, X_train, y_train, X_val, y_val):
+        """
+        Performs model training
+        """
+        # Train the model and save its history
         self.history = self.model.fit(
             x=X_train,
             y=y_train,
             batch_size=self.batch_size,
             epochs=self.epochs,
             validation_data=(X_val, y_val),
-            callbacks=[early_stopping],
+            # callbacks=[early_stopping],
         ).history
