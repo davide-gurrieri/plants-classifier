@@ -128,8 +128,3 @@ class ExampleModel_augm(GeneralModel):
             validation_data=validation_data,
             callbacks=[early_stopping],
         ).history
-
-
-
-
-class 
