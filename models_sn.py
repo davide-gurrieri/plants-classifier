@@ -47,7 +47,7 @@ class ExampleModel_augm(GeneralModel):
         preprocessing = tf.keras.Sequential([
             tfkl.RandomFlip("horizontal"),
             tfkl.RandomFlip("vertical"),
-            tfkl.RandomRotation(0.25)
+            tfkl.RandomRotation(0.25),
             tfkl.RandomContrast(factor=0.8, seed=None)
         ], name='preprocessing')
         
