@@ -1,4 +1,5 @@
 data/public_data.npz
+config/
 .ipynb_checkpoints/
 __pycache__/
 .vscode/
