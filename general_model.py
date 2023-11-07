@@ -1,0 +1,208 @@
+from imports import *
+
+
+class GeneralModel:
+    name = ""
+    seed = SEED
+    model = tfk.Model()
+    history = {}
+    history_val = {}
+    cv_n_fold = 0
+    cv_histories = []
+    cv_scores = []
+    cv_best_epochs = []
+    cv_avg_epochs = -1
+
+    def __init__(self, build_kwargs={}, compile_kwargs={}, fit_kwargs={}):
+        self.build_kwargs = build_kwargs
+        self.compile_kwargs = compile_kwargs
+        self.fit_kwargs = fit_kwargs
+
+    def build(self):
+        pass
+
+    def augmentation(self, input_layer):
+        preprocessing = tf.keras.Sequential(
+            [
+                tfkl.RandomFlip(mode="horizontal"),
+                tfkl.RandomFlip(mode="vertical"),
+                tfkl.RandomRotation(factor=0.25),
+                tfkl.RandomContrast(factor=0.8),
+            ],
+            name="preprocessing",
+        )(input_layer)
+
+        return preprocessing
+
+    def compile(self):
+        """
+        Compile the model
+        """
+        self.model.compile(**self.compile_kwargs)
+
+    def train(self, x_train, y_train):
+        """
+        Train the model
+        """
+        self.history = self.model.fit(
+            x=x_train,
+            y=y_train,
+            **self.fit_kwargs,
+        ).history
+
+    def train_val(self, x_train, y_train, x_val, y_val):
+        """
+        Train the model
+        """
+        self.history_val = self.model.fit(
+            x=x_train,
+            y=y_train,
+            validation_data=(x_val, y_val),
+            **self.fit_kwargs,
+        ).history
+
+    def save_model(self):
+        """
+        Save the trained model in the models folder
+        """
+        self.model.save(f"saved_models/{self.name}")
+
+    def plot_history(self, training=True, figsize=(15, 2)):
+        """
+        Plot the loss and metrics for the training and validation sets with respect to the training epochs.
+
+        Parameters
+        ----------
+        training : bool, optional
+            show the training plots, by default True
+        figsize : tuple, optional
+            dimension of the plots, by default (15, 2)
+        """
+        keys = list(self.history_val.keys())
+        n_metrics = len(keys) // 2
+
+        for i in range(n_metrics):
+            plt.figure(figsize=figsize)
+            if training:
+                plt.plot(
+                    self.history_val[keys[i]], label="Training " + keys[i], alpha=0.8
+                )
+            plt.plot(
+                self.history_val[keys[i + n_metrics]],
+                label="Validation " + keys[i],
+                alpha=0.8,
+            )
+            plt.title(keys[i])
+            plt.legend()
+            plt.grid(alpha=0.3)
+
+        plt.show()
+
+    def evaluate(self, x_eval, y_eval):
+        """
+        Evaluate the model on the evaluation set.
+
+        Parameters
+        ----------
+        X_eval : numpy.ndarray
+            Evaluation input data
+        y_eval : numpy.ndarray
+            Evaluation target data
+        """
+        # Predict labels for the entire validation set
+        predictions = self.model.predict(x_eval, verbose=0)
+        accuracy = accuracy_score(
+            np.argmax(y_eval, axis=-1), np.argmax(predictions, axis=-1)
+        )
+        precision = precision_score(
+            np.argmax(y_eval, axis=-1), np.argmax(predictions, axis=-1)
+        )
+        recall = recall_score(
+            np.argmax(y_eval, axis=-1), np.argmax(predictions, axis=-1)
+        )
+
+        # Validation accuracy
+        print(
+            f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f}\nRecall: {recall:.4f}"
+        )
+
+    def train_cv(self, x_train_val, y_train_val, num_folds=10):
+        self.cv_n_fold = num_folds
+        # Create a cross-validation object
+        kfold = StratifiedKFold(
+            n_splits=num_folds, shuffle=True, random_state=self.seed
+        )
+
+        # Loop through each fold
+        for fold_idx, (train_idx, valid_idx) in enumerate(
+            kfold.split(x_train_val, y_train_val)
+        ):
+            print(f"Starting training on fold num: {fold_idx + 1}")
+
+            # Build a new model for each fold
+            self.build()
+            self.compile()
+            self.train_val(
+                x_train_val[train_idx],
+                y_train_val[train_idx],
+                x_train_val[valid_idx],
+                y_train_val[valid_idx],
+            )
+
+            # Evaluate the model on the validation data for this fold
+            # Returns the loss value & metrics values for the model in test mode.
+            score = self.model.evaluate(
+                x_train_val[valid_idx],
+                y_train_val[valid_idx],
+                verbose=0,
+            )
+            self.cv_scores.append(
+                score[1]
+            )  # score[0] is the loss, score[1] is the first metric
+
+            # Calculate the best epoch for early stopping
+            best_epoch = (
+                # len(self.history["loss"]) - self.fit_kwargs["callbacks"][0].patience
+            )
+            self.cv_best_epochs.append(best_epoch)
+
+            # Store the training history for this fold
+            self.cv_histories.append(self.history)
+
+        # Print mean and standard deviation of Accuracy scores
+        print("Score statistics:")
+        print(
+            f"Mean: {np.mean(self.cv_scores).round(4)}\nStd:  {np.std(self.cv_scores).round(4)}"
+        )
+
+        # Calculate the average best epoch (la patience viene sottratta)
+        self.cv_avg_epochs = int(np.mean(self.cv_best_epochs))
+        print(f"Best average number of epochs: {self.cv_avg_epochs}")
+
+        # train on the entire dataset
+        print("Training on the entire dataset...")
+        self.build()
+        self.compile()
+        self.train(x_train_val, y_train_val)
+
+    def plot_cv_histories(self):
+        # Define a list of colors for plotting
+        colors = sns.color_palette("husl", self.cv_n_fold)
+
+        # Create a figure for MSE visualization
+        plt.figure(figsize=(15, 6))
+
+        # Plot Accuracy for each fold
+        patience = self.fit_kwargs["callbacks"][0].patience
+        for fold_idx in range(self.cv_n_fold):
+            plt.plot(
+                self.cv_histories[fold_idx]["val_accuracy"][:-patience],
+                color=colors[fold_idx],
+                label=f"Fold N°{fold_idx+1}",
+            )
+            plt.title("Accuracy")
+            plt.legend(loc="upper left")
+            plt.grid(alpha=0.3)
+
+        # Show the plot
+        plt.show()

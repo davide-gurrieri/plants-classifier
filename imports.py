@@ -25,7 +25,7 @@ random.seed(SEED)
 # Import tensorflow
 import tensorflow as tf
 from tensorflow import keras as tfk
-from keras import layers as tfkl
+from tensorflow.keras import layers as tfkl
 
 tf.autograph.set_verbosity(0)
 tf.get_logger().setLevel(logging.ERROR)
@@ -46,3 +46,5 @@ from sklearn.metrics import (
     confusion_matrix,
 )
 import seaborn as sns
+import cv2
+from keras.applications.mobilenet import preprocess_input

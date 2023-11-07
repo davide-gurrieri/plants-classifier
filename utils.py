@@ -5,183 +5,78 @@ This module contains utilities for the ANN course.
 from imports import *
 
 
-class GeneralModel:
-    n_folds = None
+def data_processing(name="data/public_data.npz"):
+    # Load data
+    dataset = np.load("data/public_data.npz", allow_pickle=True)
+    X_train_val = dataset["data"]
+    y_train_val = dataset["labels"]
+    labels = {0: "healthy", 1: "unhealthy"}
 
-    def __init__(self):
-        self.name = None
-        self.epochs = None
-        self.batch_size = None
-        self.patience = 0
-        self.seed = SEED
-        self.model = None
-        self.history = {}
-        # cv data
-        self.histories = []
-        self.scores = []
-        self.best_epochs = []
-        self.avg_epochs = None
+    # convert elements of y_train_val to 0 and 1
+    y_train_val = np.array([0 if label == "healthy" else 1 for label in y_train_val])
 
-    def build(self):
-        """
-        Definition and building of the model
-        """
-        raise NotImplementedError
+    # Expand also the labels dimension moving from (x,) to (x, 1), with x cardinality
+    y_train_val = np.expand_dims(y_train_val, axis=-1)
 
-    def compile(self):
-        """
-        Compile the model
-        """
-        raise NotImplementedError
+    # remove all the items equal to shrek or trol from the dataset
+    shrek = X_train_val[58]
+    trol = X_train_val[338]
+    index_to_remove = []
+    for i, imm in enumerate(X_train_val):
+        if np.array_equal(imm, shrek) or np.array_equal(imm, trol):
+            index_to_remove.append(i)
+    index_to_remove += [134, 1029, 1151, 1874, 2119, 2583, 2730, 3670, 3842, 4315]
+    X_train_val = np.delete(X_train_val, index_to_remove, axis=0)
+    y_train_val = np.delete(y_train_val, index_to_remove, axis=0)
 
-    def train(self, X_train, y_train, X_val, y_val):
-        """
-        Train the model
-        """
-        raise NotImplementedError
+    # Print dataset information
+    counting = pd.DataFrame(y_train_val, columns=["status"])["status"].value_counts()
+    dataset_info = f"The dataset contains {len(X_train_val)} images of plants, {counting[0]} healthy and {counting[1]} unhealthy."
+    dataset_info += f"\nThe ratio of the healthy plants over the total is {counting[0]/len(X_train_val):.2f}."
+    dataset_info += f"\nEach image has shape {X_train_val[0].shape}."
+    dataset_info += f"\nThe labels encoding is: {labels}."
+    print(dataset_info)
 
-    def save_model(self):
-        """
-        Save the trained model in the models folder
-        """
-        self.model.save(f"models/{self.name}")
+    return X_train_val, y_train_val, labels
 
-    def plot_history(self, training=True, figsize=(15, 2)):
-        """
-        Plot the loss and metrics for the training and validation sets with respect to the training epochs.
 
-        Parameters
-        ----------
-        training : bool, optional
-            show the training plots, by default True
-        figsize : tuple, optional
-            dimension of the plots, by default (15, 2)
-        """
-        keys = list(self.history.keys())
-        n_metrics = len(keys) // 2
+def plot_images(
+    X_train_val,
+    y_train_val,
+    num_img=100,
+    num_cols=20,
+    show=True,
+    save=False,
+    name="images.pdf",
+):
+    # Calcola il numero totale di righe necessarie
+    num_rows = (num_img + num_cols - 1) // num_cols
 
-        for i in range(n_metrics):
-            plt.figure(figsize=figsize)
-            if training:
-                plt.plot(self.history[keys[i]], label="Training " + keys[i], alpha=0.8)
-            plt.plot(
-                self.history[keys[i + n_metrics]],
-                label="Validation " + keys[i],
-                alpha=0.8,
-            )
-            plt.title(keys[i])
-            plt.legend()
-            plt.grid(alpha=0.3)
+    # Crea una figura con il numero corretto di righe e colonne
+    fig, axes = plt.subplots(num_rows, num_cols, figsize=(15, num_rows))
 
-        plt.show()
+    # Itera attraverso il numero selezionato di immagini
+    for i in range(num_img):
+        row_idx = i // num_cols
+        col_idx = i % num_cols
+        ax = axes[row_idx, col_idx]
 
-    def evaluate(self, X_eval, y_eval):
-        """
-        Evaluate the model on the evaluation set.
+        ax.imshow(X_train_val[i] / 255)
+        ax.set_title(f"{i}-{y_train_val[i][0]}")
+        ax.axis("off")
 
-        Parameters
-        ----------
-        X_eval : numpy.ndarray
-            Evaluation input data
-        y_eval : numpy.ndarray
-            Evaluation target data
-        """
-        # Predict labels for the entire validation set
-        predictions = self.model.predict(X_eval, verbose=0)
-        accuracy = accuracy_score(
-            np.argmax(y_eval, axis=-1), np.argmax(predictions, axis=-1)
-        )
+    # Rimuovi eventuali assi extra che non sono stati utilizzati
+    for i in range(num_img, num_rows * num_cols):
+        row_idx = i // num_cols
+        col_idx = i % num_cols
+        fig.delaxes(axes[row_idx, col_idx])
 
-        # Validation accuracy
-        print(f"Evaluated accuracy: {accuracy:.4f}")
-
-    def train_cv(
-        self,
-        x_train_val,
-        y_train_val,
-        num_folds=10,
-        stratified=True,
-        shuffle=True,
-    ):
-        self.n_folds = num_folds
-        # Create a cross-validation object
-        if stratified:
-            kfold = StratifiedKFold(
-                n_splits=num_folds, shuffle=shuffle, random_state=self.seed
-            )
-        else:
-            kfold = KFold(n_splits=num_folds, shuffle=shuffle, random_state=self.seed)
-
-        # Loop through each fold
-        for fold_idx, (train_idx, valid_idx) in enumerate(
-            kfold.split(x_train_val, y_train_val)
-        ):
-            print(f"Starting training on fold num: {fold_idx + 1}")
-
-            # Build a new model for each fold
-            self.build()
-            self.compile()
-            self.train(
-                x_train_val[train_idx],
-                tfk.utils.to_categorical(y_train_val[train_idx]),
-                x_train_val[valid_idx],
-                tfk.utils.to_categorical(y_train_val[valid_idx]),
-            )
-
-            # Evaluate the model on the validation data for this fold
-            # Returns the loss value & metrics values for the model in test mode.
-            score = self.model.evaluate(
-                x_train_val[valid_idx],
-                tfk.utils.to_categorical(y_train_val[valid_idx]),
-                verbose=0,
-            )
-            self.scores.append(
-                score[1]
-            )  # score[0] is the loss, score[1] is the first metric
-
-            # Calculate the best epoch for early stopping
-            best_epoch = len(self.history["loss"]) - self.patience
-            self.best_epochs.append(best_epoch)
-
-            # Store the training history for this fold
-            self.histories.append(self.history)
-
-        # Print mean and standard deviation of Accuracy scores
-        print("Score statistics:")
-        print(
-            f"Mean: {np.mean(self.scores).round(4)}\nStd:  {np.std(self.scores).round(4)}"
-        )
-
-        # Calculate the average best epoch (la patience viene sottratta)
-        self.avg_epochs = int(np.mean(self.best_epochs))
-        print(f"Best average number of epochs: {self.avg_epochs}")
-
-        # train on the entire dataset
-        print("Training on the entire dataset...")
-        self.build()
-        self.compile()
-        self.train(x_train_val, tfk.utils.to_categorical(y_train_val), None, None)
-
-    def plot_cv_histories(self):
-        # Define a list of colors for plotting
-        colors = sns.color_palette("husl", self.n_folds)
-
-        # Create a figure for MSE visualization
-        plt.figure(figsize=(15, 6))
-
-        # Plot MSE for each fold
-        for fold_idx in range(self.n_folds):
-            plt.plot(
-                self.histories[fold_idx]["val_mse"][: -self.patience],
-                color=colors[fold_idx],
-                label=f"Fold N°{fold_idx+1}",
-            )
-            plt.title("Accuracy")
-            plt.legend(loc="upper left")
-            plt.grid(alpha=0.3)
-
-        # Show the plot
-        plt.show()
+    plt.tight_layout()
+    # Salva l'immagine in un file PDF
+    if save:
+        plt.savefig(name, format="pdf")
+    if not show:
+        plt.close()
 
 
 # TO DO
