@@ -115,7 +115,7 @@ class VGGBNAdamW(GeneralModel):
         )
         x1 = self.conv_block(
             x=x0,
-            filters=self.build_params_1["filters_1"],
+            filters=self.build_param_1["filters_1"],
             kernel_size=self.build_kwargs["kernel_size"],
             downsample=False,
             stack=self.build_kwargs["stack"],
