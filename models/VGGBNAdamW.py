@@ -14,7 +14,7 @@ build_param_1 = {
 
 compile_param_1 = {
     "loss": tfk.losses.BinaryCrossentropy(),
-    "optimizer": tfk.optimizers.AdamW(learning_rate=0.001),
+    "optimizer": tfk.optimizers.AdamW(learning_rate=0.001,weight_decay=5e-4),
     "metrics": ["accuracy"],
 }
 
@@ -32,7 +32,7 @@ fit_param_1 = {
 }
 
 
-class VGGBN(GeneralModel):
+class VGGBNAdamW(GeneralModel):
     """
     First simple model copied from the lab.
 
