@@ -20,7 +20,7 @@ compile_param_1 = {
 
 fit_param_1 = {
     "batch_size": 32,
-    "epochs": 2,
+    "epochs": 500,
     "callbacks": [
         tfk.callbacks.EarlyStopping(
             monitor="val_accuracy",
