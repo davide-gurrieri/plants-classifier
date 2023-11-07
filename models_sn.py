@@ -119,7 +119,7 @@ class ExampleModel_augm(GeneralModel):
         )
 
         # Train the model and save its history
-        validation_data = None if X_val or y_val is None else (X_val, y_val)
+        validation_data = None if X_val is None or y_val is None else (X_val, y_val)
         self.history = self.model.fit(
             x=X_train,
             y=y_train,
