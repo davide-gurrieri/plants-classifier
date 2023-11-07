@@ -67,6 +67,7 @@ class VGG18Residual(GeneralModel):
         activation="relu",
         stack=None,
         batch_norm=True,
+        name="",
     ):
         """
         Definition of a residual convolutional block with optinal batch normalization
@@ -75,7 +76,7 @@ class VGG18Residual(GeneralModel):
         stack = self.build_kwargs["stack"]
 
         if downsample:
-            x = tfkl.MaxPooling2D(name="MaxPool_")(x)
+            x = tfkl.MaxPooling2D(name="MaxPool_" + name)(x)
 
         x_ = x
 
@@ -84,18 +85,21 @@ class VGG18Residual(GeneralModel):
                 filters=filters,
                 kernel_size=kernel_size,
                 padding=padding,
-                name="Conv_" + str(s + 1),
+                name="Conv_" + name + str(s + 1),
             )(x_)
             if batch_norm:
-                x_ = tfkl.BatchNormalization(name="BatchNorm_" + str(s + 1))(x_)
-            x_ = tfkl.Activation(activation, name="Activation_" + str(s + 1))(x_)
+                x_ = tfkl.BatchNormalization(name="BatchNorm_" + name + str(s + 1))(x_)
+            x_ = tfkl.Activation(activation, name="Activation_" + name + str(s + 1))(x_)
 
         if downsample:
             x = tfkl.Conv2D(
-                filters=filters, kernel_size=1, padding=padding, name="Conv_" + "skip"
+                filters=filters,
+                kernel_size=1,
+                padding=padding,
+                name="Conv_" + name + "skip",
             )(x)
 
-        x = tfkl.Add(name="Add_")([x_, x])
+        x = tfkl.Add(name="Add_" + name)([x_, x])
 
         return x
 
@@ -125,12 +129,14 @@ class VGG18Residual(GeneralModel):
             filters=self.build_kwargs["filters_1"],
             kernel_size=self.build_kwargs["kernel_size"],
             downsample=False,
+            name="1",
         )
         x = self.conv_residual_block(
             x=x,
             filters=self.build_kwargs["filters_1"],
             kernel_size=self.build_kwargs["kernel_size"],
             downsample=False,
+            name="2",
         )
 
         x = self.conv_residual_block(
@@ -138,12 +144,14 @@ class VGG18Residual(GeneralModel):
             filters=self.build_kwargs["filters_2"],
             kernel_size=self.build_kwargs["kernel_size"],
             downsample=True,
+            name="3",
         )
         x = self.conv_residual_block(
             x=x,
             filters=self.build_kwargs["filters_2"],
             kernel_size=self.build_kwargs["kernel_size"],
             downsample=False,
+            name="4",
         )
 
         x = self.conv_residual_block(
@@ -151,12 +159,14 @@ class VGG18Residual(GeneralModel):
             filters=self.build_kwargs["filters_3"],
             kernel_size=self.build_kwargs["kernel_size"],
             downsample=True,
+            name="5",
         )
         x = self.conv_residual_block(
             x=x,
             filters=self.build_kwargs["filters_3"],
             kernel_size=self.build_kwargs["kernel_size"],
             downsample=False,
+            name="6",
         )
 
         x = self.conv_residual_block(
@@ -164,16 +174,19 @@ class VGG18Residual(GeneralModel):
             filters=self.build_kwargs["filters_4"],
             kernel_size=self.build_kwargs["kernel_size"],
             downsample=True,
+            name="7",
         )
         x = self.conv_residual_block(
             x=x,
             filters=self.build_kwargs["filters_4"],
             kernel_size=self.build_kwargs["kernel_size"],
             downsample=False,
+            name="8",
         )
 
         x = tfkl.GlobalAveragePooling2D(name="GlobalAveragePooling")(x)
-
+        # x = tfkl.Dense(self.build_kwargs["output_shape"], name='Dense')(x)
+        # output_activation = tfkl.Activation('softmax', name='Softmax')(x)
         output_layer = tfkl.Dense(
             units=self.build_kwargs["output_shape"], activation="sigmoid", name="Output"
         )(x)
