@@ -57,13 +57,14 @@ class ExampleModel(GeneralModel):
 
         # Build the neural network layer by layer
         input_layer = tfkl.Input(shape=self.build_kwargs["input_shape"], name="Input")
-        preprocessing = super().augmentation(input_layer)
 
-        scale_layer = tfkl.Rescaling(scale=1 / 255, offset=0)(preprocessing)
+        scale_layer = tfkl.Rescaling(scale=1 / 255, offset=0)(input_layer)
+
+        preprocessing = super().augmentation(scale_layer)
 
         x = tfkl.Conv2D(
             filters=32, kernel_size=3, padding="same", activation="relu", name="conv00"
-        )(scale_layer)
+        )(preprocessing)
         x = tfkl.Conv2D(
             filters=32, kernel_size=3, padding="same", activation="relu", name="conv01"
         )(x)
