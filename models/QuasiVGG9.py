@@ -1,18 +1,18 @@
 from imports import *
 from general_model import GeneralModel
 
-build_kwargs_1 = {
+build_param_1 = {
     "input_shape": (96, 96, 3),
     "output_shape": 1,
 }
 
-compile_kwargs_1 = {
+compile_param_1 = {
     "loss": tfk.losses.BinaryCrossentropy(),
     "optimizer": tfk.optimizers.Adam(learning_rate=0.001),
     "metrics": ["accuracy"],
 }
 
-fit_kwargs_1 = {
+fit_param_1 = {
     "batch_size": 32,
     "epochs": 2,
     "callbacks": [
@@ -26,7 +26,7 @@ fit_kwargs_1 = {
 }
 
 
-class ExampleModel(GeneralModel):
+class QuasiVGG9(GeneralModel):
     """
     First simple model copied from the lab.
 
