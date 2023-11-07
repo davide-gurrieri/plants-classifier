@@ -122,7 +122,7 @@ class VGGBNAdamW(GeneralModel):
             name="2",
         )
 
-        x2 = conv_block(
+        x2 = self.conv_block(
             x=x0,
             filters=self.build_kwargs["filters_2"],
             kernel_size=self.build_kwargs["kernel_size"],
@@ -130,7 +130,7 @@ class VGGBNAdamW(GeneralModel):
             stack=self.build_kwargs["stack"],
             name="3",
         )
-        x2 = conv_block(
+        x2 = self.conv_block(
             x=x0,
             filters=self.build_kwargs["filters_2"],
             kernel_size=self.build_kwargs["kernel_size"],
@@ -139,7 +139,7 @@ class VGGBNAdamW(GeneralModel):
             name="4",
         )
 
-        x3 = conv_block(
+        x3 = self.conv_block(
             x=x0,
             filters=self.build_kwargs["filters_3"],
             kernel_size=self.build_kwargs["kernel_size"],
@@ -147,7 +147,7 @@ class VGGBNAdamW(GeneralModel):
             stack=self.build_kwargs["stack"],
             name="5",
         )
-        x3 = conv_block(
+        x3 = self.conv_block(
             x=x0,
             filters=self.build_kwargs["filters_3"],
             kernel_size=self.build_kwargs["kernel_size"],
@@ -156,7 +156,7 @@ class VGGBNAdamW(GeneralModel):
             name="6",
         )
 
-        x4 = conv_block(
+        x4 = self.conv_block(
             x=x0,
             filters=self.build_kwargs["filters_4"],
             kernel_size=self.build_kwargs["kernel_size"],
@@ -164,7 +164,7 @@ class VGGBNAdamW(GeneralModel):
             stack=self.build_kwargs["stack"],
             name="7",
         )
-        x4 = conv_block(
+        x4 = self.conv_block(
             x=x0,
             filters=self.build_kwargs["filters_4"],
             kernel_size=self.build_kwargs["kernel_size"],
