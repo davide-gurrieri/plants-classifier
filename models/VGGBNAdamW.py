@@ -105,7 +105,7 @@ class VGGBNAdamW(GeneralModel):
         x0 = tfkl.Activation("relu", name="ReLU0")(preprocessing)
 
         # Create convolutional blocks
-        x1 = conv_block(
+        x1 = self.conv_block(
             x=x0,
             filters=self.build_kwargs["filters_1"],
             kernel_size=self.build_kwargs["kernel_size"],
@@ -113,7 +113,7 @@ class VGGBNAdamW(GeneralModel):
             stack=self.build_kwargs["stack"],
             name="1",
         )
-        x1 = conv_block(
+        x1 = self.conv_block(
             x=x0,
             filters=self.build_params_1["filters_1"],
             kernel_size=self.build_kwargs["kernel_size"],
@@ -181,4 +181,5 @@ class VGGBNAdamW(GeneralModel):
 
         # Connect input and output through the Model class
         self.model = tfk.Model(inputs=input_layer, outputs=output_layer, name="Convnet")
+    
         
