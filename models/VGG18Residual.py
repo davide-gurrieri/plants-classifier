@@ -14,7 +14,7 @@ build_param_1 = {
 
 compile_param_1 = {
     "loss": tfk.losses.BinaryCrossentropy(),
-    "optimizer": tfk.optimizers.Adam(learning_rate=1e-4, weight_decay=5e-4),
+    "optimizer": tfk.optimizers.AdamW(learning_rate=1e-4, weight_decay=5e-4),
     "metrics": ["accuracy"],
 }
 
@@ -56,6 +56,19 @@ class VGG18Residual(GeneralModel):
     def __init__(self, name, build_kwargs, compile_kwargs, fit_kwargs):
         super().__init__(build_kwargs, compile_kwargs, fit_kwargs)
         self.name = name
+
+    def augmentation(self, input_layer):
+        preprocessing = tf.keras.Sequential(
+            [
+                tfkl.RandomFlip(mode="horizontal"),
+                tfkl.RandomFlip(mode="vertical"),
+                tfkl.RandomRotation(factor=0.25),
+                # tfkl.RandomContrast(factor=0.8),
+            ],
+            name="preprocessing",
+        )(input_layer)
+
+        return preprocessing
 
     def conv_residual_block(
         self,
@@ -116,8 +129,10 @@ class VGG18Residual(GeneralModel):
 
         scale_layer = tfkl.Rescaling(scale=1 / 255, offset=0)(input_layer)
 
+        preprocessing = self.augmentation(scale_layer)
+
         x = tfkl.Conv2D(filters=64, kernel_size=3, padding="same", name="Conv0")(
-            scale_layer
+            preprocessing
         )
         x = tfkl.BatchNormalization(name="BatchNorm0")(x)
         x = tfkl.Activation("relu", name="ReLU0")(x)
