@@ -35,7 +35,7 @@ fit_param_1 = {
 }
 
 
-class VGG18Residual(GeneralModel):
+class VGG18ResidualFlatten(GeneralModel):
     """
     VGG with Batch Normalization and Skip Connection.
 
