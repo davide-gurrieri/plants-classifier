@@ -14,7 +14,7 @@ build_param_1 = {
 
 compile_param_1 = {
     "loss": tfk.losses.BinaryCrossentropy(),
-    "optimizer": tfk.optimizers.Adam(learning_rate=0.001, weight_decay=5e-4),
+    "optimizer": tfk.optimizers.Adam(learning_rate=1e-4, weight_decay=5e-4),
     "metrics": ["accuracy"],
 }
 
