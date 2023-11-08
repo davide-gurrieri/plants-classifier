@@ -96,13 +96,13 @@ class VGGBNAdamW(GeneralModel):
 
         scale_layer = tfkl.Rescaling(scale=1 / 255, offset=0)(input_layer)
 
-        #preprocessing = super().augmentation(scale_layer)
+        preprocessing = super().augmentation(scale_layer)
 
         # Initial convolution and activation
         x0 = tfkl.Conv2D(filters=64, kernel_size=3, padding="same", name="Conv0")(
-            scale_layer
+            preprocessing
         )
-        x0 = tfkl.Activation("relu", name="ReLU0")(scale_layer)
+        x0 = tfkl.Activation("relu", name="ReLU0")(preprocessing)
 
         # Create convolutional blocks
         x1 = self.conv_block(
