@@ -96,7 +96,16 @@ class VGGBNAdamW(GeneralModel):
 
         scale_layer = tfkl.Rescaling(scale=1 / 255, offset=0)(input_layer)
 
-        preprocessing = super().augmentation(scale_layer)
+        #preprocessing = super().augmentation(scale_layer)
+        preprocessing = tf.keras.Sequential(
+            [
+                tfkl.RandomFlip(mode="horizontal"),
+                tfkl.RandomFlip(mode="vertical"),
+                tfkl.RandomRotation(factor=0.25),
+                #tfkl.RandomContrast(factor=0.8),
+            ],
+            name="preprocessing",
+        )(input_layer)
 
         # Initial convolution and activation
         x0 = tfkl.Conv2D(filters=64, kernel_size=3, padding="same", name="Conv0")(
