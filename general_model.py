@@ -12,6 +12,15 @@ class GeneralModel:
     cv_scores = []
     cv_best_epochs = []
     cv_avg_epochs = -1
+    augmentation = tf.keras.Sequential(
+        [
+            tfkl.RandomFlip(mode="horizontal"),
+            tfkl.RandomFlip(mode="vertical"),
+            tfkl.RandomRotation(factor=0.25),
+            # tfkl.RandomContrast(factor=0.8),
+        ],
+        name="preprocessing",
+    )
 
     def __init__(self, build_kwargs={}, compile_kwargs={}, fit_kwargs={}):
         self.build_kwargs = build_kwargs
@@ -21,39 +30,33 @@ class GeneralModel:
     def build(self):
         pass
 
-    def augmentation(self, input_layer):
-        preprocessing = tf.keras.Sequential(
-            [
-                tfkl.RandomFlip(mode="horizontal"),
-                tfkl.RandomFlip(mode="vertical"),
-                tfkl.RandomRotation(factor=0.25),
-                tfkl.RandomContrast(factor=0.8),
-            ],
-            name="preprocessing",
-        )(input_layer)
-
-        return preprocessing
-
     def compile(self):
         """
         Compile the model
         """
         self.model.compile(**self.compile_kwargs)
 
-    def train(self, x_train, y_train):
+    def train(self, x_train, y_train, one_hot=True):
         """
         Train the model
         """
+        if one_hot:
+            y_train = tfk.utils.to_categorical(y_train)
+
         self.history = self.model.fit(
             x=x_train,
             y=y_train,
             **self.fit_kwargs,
         ).history
 
-    def train_val(self, x_train, y_train, x_val, y_val):
+    def train_val(self, x_train, y_train, x_val, y_val, one_hot=True):
         """
         Train the model
         """
+        if one_hot:
+            y_train = tfk.utils.to_categorical(y_train)
+            y_val = tfk.utils.to_categorical(y_val)
+
         self.history_val = self.model.fit(
             x=x_train,
             y=y_train,
