@@ -14,23 +14,23 @@ build_param_1 = {
 
 compile_param_1 = {
     "loss": tfk.losses.BinaryCrossentropy(),
-    "optimizer": tfk.optimizers.AdamW(learning_rate=1e-4, weight_decay=5e-4),
+    "optimizer": tfk.optimizers.Adam(learning_rate=1e-4),  # weight_decay=5e-4),
     "metrics": ["accuracy"],
 }
 
 fit_param_1 = {
     "batch_size": 32,
-    "epochs": 50,
+    "epochs": 100,
     "callbacks": [
         tfk.callbacks.EarlyStopping(
             monitor="val_accuracy",
-            patience=5,
+            patience=20,
             mode="max",
             restore_best_weights=True,
         ),
-        tfk.callbacks.ReduceLROnPlateau(
-            monitor="val_accuracy", factor=0.1, patience=20, min_lr=1e-5, mode="max"
-        ),
+        # tfk.callbacks.ReduceLROnPlateau(
+        #     monitor="val_accuracy", factor=0.1, patience=20, min_lr=1e-5, mode="max"
+        # ),
     ],
 }
 
@@ -56,19 +56,6 @@ class VGG18ResidualFlatten(GeneralModel):
     def __init__(self, name, build_kwargs, compile_kwargs, fit_kwargs):
         super().__init__(build_kwargs, compile_kwargs, fit_kwargs)
         self.name = name
-
-    def augmentation(self, input_layer):
-        preprocessing = tf.keras.Sequential(
-            [
-                tfkl.RandomFlip(mode="horizontal"),
-                tfkl.RandomFlip(mode="vertical"),
-                tfkl.RandomRotation(factor=0.25),
-                # tfkl.RandomContrast(factor=0.8),
-            ],
-            name="preprocessing",
-        )(input_layer)
-
-        return preprocessing
 
     def conv_residual_block(
         self,
@@ -128,6 +115,18 @@ class VGG18ResidualFlatten(GeneralModel):
         input_layer = tfkl.Input(shape=self.build_kwargs["input_shape"], name="Input")
 
         scale_layer = tfkl.Rescaling(scale=1 / 255, offset=0)(input_layer)
+
+        augmentation = tf.keras.Sequential(
+            [
+                tfkl.RandomFlip(mode="horizontal"),
+                tfkl.RandomFlip(mode="vertical"),
+                tfkl.RandomRotation(factor=0.25),
+                tfkl.RandomCrop(height=64, width=64),
+                tfkl.RandomZoom(height_factor=0.3),
+                # tfkl.RandomContrast(factor=0.8),
+            ],
+            name="preprocessing",
+        )
 
         preprocessing = self.augmentation(scale_layer)
 
