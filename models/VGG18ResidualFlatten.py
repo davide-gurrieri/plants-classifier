@@ -197,12 +197,23 @@ class VGG18Residual(GeneralModel):
             name="8",
         )
 
-        x = tfkl.GlobalAveragePooling2D(name="GlobalAveragePooling")(x)
-        # x = tfkl.Dense(self.build_kwargs["output_shape"], name='Dense')(x)
-        # output_activation = tfkl.Activation('softmax', name='Softmax')(x)
+        # x = tfkl.GlobalAveragePooling2D(name="GlobalAveragePooling")(x)
+
+        flattening_layer = tfkl.Flatten(name="flatten")(x)
+
+        classifier_layer = tfkl.Dense(units=120, activation="relu", name="dense1")(
+            flattening_layer
+        )
+
+        classifier_layer = tfkl.Dense(units=84, activation="relu", name="dense2")(
+            classifier_layer
+        )
+
         output_layer = tfkl.Dense(
             units=self.build_kwargs["output_shape"], activation="sigmoid", name="Output"
-        )(x)
+        )(classifier_layer)
+
+        # output_layer = tfkl.Dense(units=self.build_kwargs["output_shape"], activation="sigmoid", name="Output")(x)
 
         # Connect input and output through the Model class
         self.model = tfk.Model(
