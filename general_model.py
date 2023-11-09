@@ -112,19 +112,19 @@ class GeneralModel:
         y_eval : numpy.ndarray
             Evaluation target data
         """
-        # Predict labels for the entire validation set
         predictions = self.model.predict(x_eval, verbose=0)
-        accuracy = accuracy_score(
-            np.argmax(y_eval, axis=-1), np.argmax(predictions, axis=-1)
-        )
-        precision = precision_score(
-            np.argmax(y_eval, axis=-1), np.argmax(predictions, axis=-1)
-        )
-        recall = recall_score(
-            np.argmax(y_eval, axis=-1), np.argmax(predictions, axis=-1)
-        )
-
-        # Validation accuracy
+        if self.build_kwargs["output_shape"] == 2:
+            # predictions is a n x 2 matrix
+            predictions = np.argmax(predictions, axis=-1)
+            accuracy = accuracy_score(y_eval, predictions)
+            precision = precision_score(y_eval, predictions)
+            recall = recall_score(y_eval, predictions)
+        else:
+            # predictions is a probability vector
+            predictions = np.ndarray.round(predictions).astype(int)
+            accuracy = accuracy_score(y_eval, predictions)
+            precision = precision_score(y_eval, predictions)
+            recall = recall_score(y_eval, predictions)
         print(
             f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f}\nRecall: {recall:.4f}"
         )
