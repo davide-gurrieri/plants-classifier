@@ -1,6 +1,6 @@
 from imports import *
 from general_model import GeneralModel
-from tensorflow.keras.applications.ConvNeXtBase import preprocess_input
+from tf.keras.applications.ConvNeXtBase import preprocess_input
 
 build_param_1 = {
     "input_shape": (96, 96, 3),
