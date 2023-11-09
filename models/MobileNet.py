@@ -59,15 +59,18 @@ class MobileNet(GeneralModel):
         # Create an input layer with shape (96, 96, 3)
         input_layer = tfk.Input(shape=self.build_kwargs["input_shape"], name="Input")
         # Augmentation of the input
-        augmentation_layer = augmentation(input_layer)
+                # augmentation_layer = augmentation(input_layer)
         # preprocessing layer
-        preprocessing_layer = preprocess_input(augmentation_layer)
+        preprocessing_layer = preprocess_input(input_layer)
         # Connect MobileNetV2 to the input
         x = mobile(preprocessing_layer)
         # Adding dense layers
         classifier_layer = tfkl.Dense(units=1024, activation="relu", name="dense1")(x)
         classifier_layer = tfkl.Dense(units=512, activation="relu", name="dense2")(classifier_layer)
         classifier_layer = tfkl.Dense(units=256, activation="relu", name="dense2")(classifier_layer)
+        classifier_layer = tfkl.Dense(units=128, activation="relu", name="dense3")(classifier_layer)
+        classifier_layer = tfkl.Dense(units=64, activation="relu", name="dense4")(classifier_layer)
+
         # Add a Dense layer with 1 units and sigmoid activation as the classifier
         output_layer = tfkl.Dense(
             units=self.build_kwargs["output_shape"],
