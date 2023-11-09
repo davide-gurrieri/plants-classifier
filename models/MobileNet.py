@@ -66,7 +66,7 @@ class MobileNet(GeneralModel):
         x = mobile(preprocessing_layer)
         # Adding dense layers
         # classifier_layer = tfkl.Dense(units=1024, activation="relu", name="dense1")(x)
-        classifier_layer = tfkl.Dense(units=512, activation="relu", name="dense2")(classifier_layer)
+        classifier_layer = tfkl.Dense(units=512, activation="relu", name="dense2")(x)
         classifier_layer = tfkl.Dense(units=256, activation="relu", name="dense2")(classifier_layer)
         classifier_layer = tfkl.Dense(units=128, activation="relu", name="dense3")(classifier_layer)
         classifier_layer = tfkl.Dense(units=64, activation="relu", name="dense4")(classifier_layer)
