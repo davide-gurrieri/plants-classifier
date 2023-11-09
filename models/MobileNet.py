@@ -10,7 +10,7 @@ build_param_1 = {
 
 compile_param_1 = {
     "loss": tfk.losses.BinaryCrossentropy(),
-    "optimizer": tfk.optimizers.Adam(learning_rate=5e-4),
+    "optimizer": tfk.optimizers.Adam(learning_rate=1e-3),
     "metrics": ["accuracy"],
 }
 
@@ -43,7 +43,7 @@ class MobileNet(GeneralModel):
                 tfkl.RandomFlip(mode="vertical"),
                 tfkl.RandomRotation(factor=0.25),
                 # tfkl.RandomCrop(height=64, width=64),
-                tfkl.RandomZoom(height_factor=0.3),
+                # tfkl.RandomZoom(height_factor=0.3),
                 # tfkl.RandomContrast(factor=0.8),
             ],
             name="preprocessing",
@@ -59,13 +59,13 @@ class MobileNet(GeneralModel):
         # Create an input layer with shape (96, 96, 3)
         input_layer = tfk.Input(shape=self.build_kwargs["input_shape"], name="Input")
         # Augmentation of the input
-                # augmentation_layer = augmentation(input_layer)
+        augmentation_layer = augmentation(input_layer)
         # preprocessing layer
-        preprocessing_layer = preprocess_input(input_layer)
+        preprocessing_layer = preprocess_input(augmentation_layer)
         # Connect MobileNetV2 to the input
         x = mobile(preprocessing_layer)
         # Adding dense layers
-        classifier_layer = tfkl.Dense(units=1024, activation="relu", name="dense1")(x)
+        # classifier_layer = tfkl.Dense(units=1024, activation="relu", name="dense1")(x)
         classifier_layer = tfkl.Dense(units=512, activation="relu", name="dense2")(classifier_layer)
         classifier_layer = tfkl.Dense(units=256, activation="relu", name="dense2")(classifier_layer)
         classifier_layer = tfkl.Dense(units=128, activation="relu", name="dense3")(classifier_layer)
