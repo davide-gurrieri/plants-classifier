@@ -3,11 +3,11 @@ from general_model import GeneralModel
 
 build_param_1 = {
     "input_shape": (96, 96, 3),
-    "output_shape": 2,
+    "output_shape": 1,
 }
 
 compile_param_1 = {
-    "loss": tfk.losses.CategoricalCrossentropy(),
+    "loss": tfk.losses.BinaryCrossentropy(),
     "optimizer": tfk.optimizers.Adam(learning_rate=5e-4),
     "metrics": ["accuracy"],
 }
@@ -35,6 +35,17 @@ class QuasiVGG9(GeneralModel):
         tf.random.set_seed(self.seed)
 
         relu_init = tfk.initializers.HeUniform(seed=self.seed)
+
+        self.augmentation = tf.keras.Sequential(
+            [
+                tfkl.RandomFlip(mode="horizontal"),
+                tfkl.RandomFlip(mode="vertical"),
+                tfkl.RandomRotation(factor=0.25),
+                tfkl.RandomCrop(height=64, width=64),
+                tfkl.RandomZoom(height_factor=0.3),
+            ],
+            name="preprocessing",
+        )
 
         # Build the neural network layer by layer
         input_layer = tfkl.Input(shape=self.build_kwargs["input_shape"], name="Input")
@@ -134,6 +145,26 @@ class QuasiVGG9(GeneralModel):
             kernel_initializer=relu_init,
             name="conv41",
         )(x)
+
+        x = tfkl.MaxPooling2D(name="mp4")(x)
+
+        x = tfkl.Conv2D(
+            filters=1024,
+            kernel_size=3,
+            padding="same",
+            activation="relu",
+            kernel_initializer=relu_init,
+            name="conv50",
+        )(x)
+        x = tfkl.Conv2D(
+            filters=1024,
+            kernel_size=3,
+            padding="same",
+            activation="relu",
+            kernel_initializer=relu_init,
+            name="conv51",
+        )(x)
+
         x = tfkl.GlobalAveragePooling2D(name="gap")(x)
 
         x = tfkl.Dense(
@@ -154,9 +185,21 @@ class QuasiVGG9(GeneralModel):
             kernel_initializer=relu_init,
         )(x)
 
+        x = tfkl.Dense(
+            units=128,
+            activation="relu",
+            kernel_initializer=relu_init,
+        )(x)
+
+        x = tfkl.Dense(
+            units=32,
+            activation="relu",
+            kernel_initializer=relu_init,
+        )(x)
+
         output_layer = tfkl.Dense(
             units=self.build_kwargs["output_shape"],
-            activation="softmax",
+            activation="sigmoid",
             kernel_initializer=tfk.initializers.GlorotUniform(seed=self.seed),
             name="Output",
         )(x)
