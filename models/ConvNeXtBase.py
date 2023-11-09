@@ -1,6 +1,6 @@
 from imports import *
 from general_model import GeneralModel
-from tf.keras.applications.ConvNeXtBase import preprocess_input
+# from tf.keras.applications.ConvNeXtBase import preprocess_input
 
 build_param_1 = {
     "input_shape": (96, 96, 3),
@@ -55,11 +55,10 @@ class ConvNeXtBase(GeneralModel):
         
         augmentation_layer = augmentation(input_layer)
         
-        preprocess_layer= preprocess_input(augmentation_layer)
-
         # Build the ResNet50
-        ConvNeXtBase=tf.keras.applications.ConvNeXtBase(
+        ConvNeXtBase=tfk.applications.ConvNeXtBase(
             include_top=False,
+            include_preprocessing=True,
             weights="imagenet",
             input_tensor=None,
             input_shape=self.build_kwargs["input_shape"],
@@ -67,7 +66,7 @@ class ConvNeXtBase(GeneralModel):
             pooling="avg",
         )
  
-        x = ConvNeXtBase(preprocess_layer)
+        x = ConvNeXtBase(augmentation_layer)
 
         x = tfkl.Dropout(0.4)(x)
                          
