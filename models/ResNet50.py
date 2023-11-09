@@ -9,7 +9,7 @@ build_param_1 = {
 
 compile_param_1 = {
     "loss": tfk.losses.BinaryCrossentropy(),
-    "optimizer": tfk.optimizers.Adam(learning_rate=5e-4),
+    "optimizer": tfk.optimizers.Adam(learning_rate=1e-4),
     "metrics": ["accuracy"],
 }
 
@@ -59,7 +59,7 @@ class ResNet50(GeneralModel):
         # Build the ResNet50
         ResNet50=tf.keras.applications.ResNet50(
             include_top=False,
-            weights=None,
+            weights="imagenet",
             input_tensor=None,
             input_shape=self.build_kwargs["input_shape"],
             pooling="avg",
