@@ -3,22 +3,22 @@ from general_model import GeneralModel
 
 build_param_1 = {
     "input_shape": (96, 96, 3),
-    "output_shape": 1,
+    "output_shape": 2,
 }
 
 compile_param_1 = {
-    "loss": tfk.losses.BinaryCrossentropy(),
+    "loss": tfk.losses.CategoricalCrossentropy(),
     "optimizer": tfk.optimizers.Adam(learning_rate=5e-4),
     "metrics": ["accuracy"],
 }
 
 fit_param_1 = {
     "batch_size": 128,
-    "epochs": 200,
+    "epochs": 2000,
     "callbacks": [
         tfk.callbacks.EarlyStopping(
             monitor="val_accuracy",
-            patience=20,
+            patience=40,
             mode="max",
             restore_best_weights=True,
         )
@@ -41,8 +41,8 @@ class QuasiVGG9(GeneralModel):
                 tfkl.RandomFlip(mode="horizontal"),
                 tfkl.RandomFlip(mode="vertical"),
                 tfkl.RandomRotation(factor=0.25),
-                tfkl.RandomCrop(height=64, width=64),
-                tfkl.RandomZoom(height_factor=0.3),
+                # tfkl.RandomCrop(height=64, width=64),
+                # tfkl.RandomZoom(height_factor=0.3),
             ],
             name="preprocessing",
         )
@@ -146,24 +146,24 @@ class QuasiVGG9(GeneralModel):
             name="conv41",
         )(x)
 
-        x = tfkl.MaxPooling2D(name="mp4")(x)
+        # x = tfkl.MaxPooling2D(name="mp4")(x)
 
-        x = tfkl.Conv2D(
-            filters=1024,
-            kernel_size=3,
-            padding="same",
-            activation="relu",
-            kernel_initializer=relu_init,
-            name="conv50",
-        )(x)
-        x = tfkl.Conv2D(
-            filters=1024,
-            kernel_size=3,
-            padding="same",
-            activation="relu",
-            kernel_initializer=relu_init,
-            name="conv51",
-        )(x)
+        # x = tfkl.Conv2D(
+        #     filters=1024,
+        #     kernel_size=3,
+        #     padding="same",
+        #     activation="relu",
+        #     kernel_initializer=relu_init,
+        #     name="conv50",
+        # )(x)
+        # x = tfkl.Conv2D(
+        #     filters=1024,
+        #     kernel_size=3,
+        #     padding="same",
+        #     activation="relu",
+        #     kernel_initializer=relu_init,
+        #     name="conv51",
+        # )(x)
 
         x = tfkl.GlobalAveragePooling2D(name="gap")(x)
 
@@ -185,21 +185,15 @@ class QuasiVGG9(GeneralModel):
             kernel_initializer=relu_init,
         )(x)
 
-        x = tfkl.Dense(
-            units=128,
-            activation="relu",
-            kernel_initializer=relu_init,
-        )(x)
-
-        x = tfkl.Dense(
-            units=32,
-            activation="relu",
-            kernel_initializer=relu_init,
-        )(x)
+        # x = tfkl.Dense(
+        #     units=128,
+        #     activation="relu",
+        #     kernel_initializer=relu_init,
+        # )(x)
 
         output_layer = tfkl.Dense(
             units=self.build_kwargs["output_shape"],
-            activation="sigmoid",
+            activation="softmax",
             kernel_initializer=tfk.initializers.GlorotUniform(seed=self.seed),
             name="Output",
         )(x)
