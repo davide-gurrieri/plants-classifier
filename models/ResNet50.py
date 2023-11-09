@@ -14,7 +14,7 @@ compile_param_1 = {
 }
 
 fit_param_1 = {
-    "batch_size": 128,
+    "batch_size": 32,
     "epochs": 200,
     "callbacks": [
         tfk.callbacks.EarlyStopping(
@@ -31,6 +31,19 @@ class ResNet50(GeneralModel):
     def __init__(self, name, build_kwargs, compile_kwargs, fit_kwargs):
         super().__init__(build_kwargs, compile_kwargs, fit_kwargs)
         self.name = name
+        
+    def augmentation(self, input_layer):
+        preprocessing = tf.keras.Sequential(
+            [
+                tfkl.RandomFlip(mode="horizontal"),
+                tfkl.RandomFlip(mode="vertical"),
+                tfkl.RandomRotation(factor=0.25),
+                tfkl.RandomZoom(0.2),
+            ],
+            name="preprocessing",
+        )(input_layer)
+
+        return preprocessing
 
     def build(self):
         tf.random.set_seed(self.seed)
@@ -55,12 +68,6 @@ class ResNet50(GeneralModel):
         x =ResNet50(preprocess_layer)
 
         x = tfkl.Dense(
-            units=1024,
-            activation="relu",
-            kernel_initializer=relu_init,
-        )(x)
-
-        x = tfkl.Dense(
             units=512,
             activation="relu",
             kernel_initializer=relu_init,
@@ -79,7 +86,7 @@ class ResNet50(GeneralModel):
         )(x)
 
         x = tfkl.Dense(
-            units=32,
+            units=64,
             activation="relu",
             kernel_initializer=relu_init,
         )(x)
