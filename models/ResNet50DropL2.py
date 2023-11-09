@@ -78,13 +78,17 @@ class ResNet50DropL2(GeneralModel):
             kernel_initializer=relu_init,
             kernel_regularizer=l2_regularizer,
         )(x)
-
+        
+        x = tfkl.Dropout(0.1)(x)
+        
         x = tfkl.Dense(
             units=256,
             activation="relu",
             kernel_initializer=relu_init,
             kernel_regularizer=l2_regularizer,
         )(x)
+        
+        x = tfkl.Dropout(0.1)(x)
 
         x = tfkl.Dense(
             units=56,
