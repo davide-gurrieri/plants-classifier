@@ -27,7 +27,7 @@ fit_param_1 = {
 }
 
 
-class ResNet50(GeneralModel):
+class ResNet50Dropout(GeneralModel):
     def __init__(self, name, build_kwargs, compile_kwargs, fit_kwargs):
         super().__init__(build_kwargs, compile_kwargs, fit_kwargs)
         self.name = name
