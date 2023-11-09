@@ -23,21 +23,36 @@ def data_processing(name="data/public_data.npz"):
     trol = X_train_val[338]
     index_to_remove = []
     for i, imm in enumerate(X_train_val):
-        if np.array_equal(imm, shrek) or np.array_equal(imm, trol):
+        if np.allclose(imm, shrek, atol=0.1) or np.allclose(imm, trol, atol=0.1):
             index_to_remove.append(i)
-    index_to_remove += [134, 1029, 1151, 1874, 2119, 2583, 2730, 3670, 3842, 4315]
-    X_train_val = np.delete(X_train_val, index_to_remove, axis=0)
-    y_train_val = np.delete(y_train_val, index_to_remove, axis=0)
+    X_outliers = X_train_val[index_to_remove]
+    y_outliers = y_train_val[index_to_remove]
+    X_train_val_no_out = np.delete(X_train_val, index_to_remove, axis=0)
+    y_train_val_no_out = np.delete(y_train_val, index_to_remove, axis=0)
 
     # Print dataset information
+    counting_no_out = pd.DataFrame(y_train_val_no_out, columns=["status"])[
+        "status"
+    ].value_counts()
     counting = pd.DataFrame(y_train_val, columns=["status"])["status"].value_counts()
-    dataset_info = f"The dataset contains {len(X_train_val)} images of plants, {counting[0]} healthy and {counting[1]} unhealthy."
-    dataset_info += f"\nThe ratio of the healthy plants over the total is {counting[0]/len(X_train_val):.2f}."
-    dataset_info += f"\nEach image has shape {X_train_val[0].shape}."
+    dataset_info = f"The dataset without outliers contains {len(X_train_val_no_out)} images of plants, {counting_no_out[0]} healthy and {counting_no_out[1]} unhealthy."
+    dataset_info += f"\nThe ratio of the healthy plants over the total is {counting_no_out[0]/len(X_train_val_no_out):.2f}."
+    dataset_info += f"\nThe ratio of the healthy plants over the total considering also outliers is {counting[0]/len(X_train_val):.2f}."
+    dataset_info += f"\nEach image has shape {X_train_val_no_out[0].shape}."
     dataset_info += f"\nThe labels encoding is: {labels}."
     print(dataset_info)
 
-    return X_train_val, y_train_val, labels
+    return (
+        X_train_val,
+        y_train_val,
+        X_train_val_no_out,
+        y_train_val_no_out,
+        labels,
+        X_outliers,
+        y_outliers,
+        shrek,
+        trol,
+    )
 
 
 def plot_images(
