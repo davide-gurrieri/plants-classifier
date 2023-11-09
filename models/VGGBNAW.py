@@ -184,7 +184,7 @@ class VGGBNAW(GeneralModel):
 
         output_layer = tfkl.Dense(
             units=self.build_kwargs["output_shape"],
-            activation="softmax",
+            activation="sigmoid",
             kernel_initializer=tfk.initializers.GlorotUniform(seed=self.seed),
             name="Output",
         )(x)
