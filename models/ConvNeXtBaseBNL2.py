@@ -18,7 +18,7 @@ fit_param_1 = {
     "callbacks": [
         tfk.callbacks.EarlyStopping(
             monitor="val_accuracy",
-            patience=20,
+            patience=10,
             mode="max",
             restore_best_weights=True,
         )
