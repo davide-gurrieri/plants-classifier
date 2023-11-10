@@ -20,7 +20,7 @@ fit_param_1 = {
             monitor="val_accuracy",
             patience=10,
             mode="max",
-            restore_best_weights=True,
+            restore_best_weights=False,
         )
     ],
 }
