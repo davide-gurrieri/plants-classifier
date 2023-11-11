@@ -49,10 +49,28 @@ class GeneralModel:
             **self.fit_kwargs,
         ).history
 
-    def train_val(self, x_train, y_train, x_val, y_val, one_hot=True):
+    def train_val(
+        self,
+        x_train,
+        y_train,
+        x_val,
+        y_val,
+        one_hot=True,
+        balanced=False,
+        loss_weights=(1, 1),
+    ):
         """
         Train the model
         """
+        if balanced:
+            class_weights = compute_class_weight(
+                "balanced", classes=np.unique(y_train[:, 0]), y=y_train[:, 0]
+            )
+            self.fit_kwargs["class_weight"] = {
+                0: loss_weights[0] * class_weights[0],
+                1: loss_weights[1] * class_weights[1],
+            }
+
         if one_hot:
             y_train = tfk.utils.to_categorical(y_train)
             y_val = tfk.utils.to_categorical(y_val)
@@ -116,17 +134,15 @@ class GeneralModel:
         if self.build_kwargs["output_shape"] == 2:
             # predictions is a n x 2 matrix
             predictions = np.argmax(predictions, axis=-1)
-            accuracy = accuracy_score(y_eval, predictions)
-            precision = precision_score(y_eval, predictions)
-            recall = recall_score(y_eval, predictions)
         else:
             # predictions is a probability vector
             predictions = np.ndarray.round(predictions).astype(int)
-            accuracy = accuracy_score(y_eval, predictions)
-            precision = precision_score(y_eval, predictions)
-            recall = recall_score(y_eval, predictions)
+        accuracy = accuracy_score(y_eval, predictions)
+        precision = precision_score(y_eval, predictions)
+        recall = recall_score(y_eval, predictions)
+        cm = confusion_matrix(y_eval, predictions)
         print(
-            f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f}\nRecall: {recall:.4f}"
+            f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f}\nRecall: {recall:.4f}\nConfusion matrix:\n{cm}"
         )
 
     def train_cv(self, x_train_val, y_train_val, num_folds=10):

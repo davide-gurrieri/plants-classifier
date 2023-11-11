@@ -1,5 +1,5 @@
 # Fix randomness and hide warnings
-SEED = 42
+SEED = 431999
 
 import os
 
@@ -47,4 +47,6 @@ from sklearn.metrics import (
 )
 import seaborn as sns
 import cv2
-from keras.applications.mobilenet import preprocess_input
+
+# from keras.applications.mobilenet import preprocess_input
+from sklearn.utils.class_weight import compute_class_weight
