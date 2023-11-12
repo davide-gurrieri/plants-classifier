@@ -1,7 +1,8 @@
 from imports import *
 from general_model import GeneralModel
-from tensorflow.keras.applications.ResNet152V2 import preprocess_input
-
+from tensorflow.keras.applications.resnet_v2 import (
+    preprocess_input as preprocess_input_resnet_v2,
+)
 
 build_param_1 = {
     "input_shape": (96, 96, 3),
@@ -32,10 +33,8 @@ class ResNet152V2(GeneralModel):
     def __init__(self, name, build_kwargs, compile_kwargs, fit_kwargs):
         super().__init__(build_kwargs, compile_kwargs, fit_kwargs)
         self.name = name
-        
 
     def build(self):
-
         tf.random.set_seed(self.seed)
 
         augmentation = tf.keras.Sequential(
@@ -53,31 +52,31 @@ class ResNet152V2(GeneralModel):
         relu_init = tfk.initializers.HeUniform(seed=self.seed)
 
         input_layer = tfkl.Input(shape=self.build_kwargs["input_shape"], name="Input")
-        
+
         augmentation_layer = augmentation(input_layer)
-        
-        preprocess_layer = preprocess_input(augmentation_layer)
+
+        preprocess_layer = preprocess_input_resnet_v2(augmentation_layer)
 
         # Build the ResNet50
-        ConvNeXtBase=tfk.applications.ResNet152V2(
+        ResNet152V2_layer = tfk.applications.ResNet152V2(
             include_top=False,
             weights="imagenet",
             input_tensor=None,
             input_shape=self.build_kwargs["input_shape"],
-            classes =2,
+            classes=2,
             pooling="avg",
         )
- 
-        x = ResNet152V2(preprocess_layer)
+
+        x = ResNet152V2_layer(preprocess_layer)
 
         x = tfkl.Dropout(0.4)(x)
-                         
+
         x = tfkl.Dense(
             units=1024,
             activation="relu",
             kernel_initializer=relu_init,
         )(x)
-        
+
         x = tfkl.Dropout(0.3)(x)
 
         x = tfkl.Dense(
@@ -85,7 +84,7 @@ class ResNet152V2(GeneralModel):
             activation="relu",
             kernel_initializer=relu_init,
         )(x)
-        
+
         x = tfkl.Dropout(0.2)(x)
 
         x = tfkl.Dense(
@@ -103,7 +102,7 @@ class ResNet152V2(GeneralModel):
         )(x)
 
         x = tfkl.Dropout(0.1)(x)
-        
+
         output_layer = tfkl.Dense(
             units=self.build_kwargs["output_shape"],
             activation="sigmoid",
