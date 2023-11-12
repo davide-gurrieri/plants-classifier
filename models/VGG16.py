@@ -1,6 +1,8 @@
 from imports import *
 from general_model import GeneralModel
-from tensorflow.keras.applications.vgg16 import preprocess_input
+from tensorflow.keras.applications.vgg16 import (
+    preprocess_input as preprocess_input_vgg16,
+)
 
 build_param_1 = {
     "input_shape": (96, 96, 3),
@@ -31,10 +33,8 @@ class VGG16(GeneralModel):
     def __init__(self, name, build_kwargs, compile_kwargs, fit_kwargs):
         super().__init__(build_kwargs, compile_kwargs, fit_kwargs)
         self.name = name
-        
 
     def build(self):
-
         tf.random.set_seed(self.seed)
 
         augmentation = tf.keras.Sequential(
@@ -52,32 +52,32 @@ class VGG16(GeneralModel):
         relu_init = tfk.initializers.HeUniform(seed=self.seed)
 
         input_layer = tfkl.Input(shape=self.build_kwargs["input_shape"], name="Input")
-        
+
         augmentation_layer = augmentation(input_layer)
-        
-        preprocess_layer= preprocess_input(augmentation_layer)
+
+        preprocess_layer = preprocess_input_vgg16(augmentation_layer)
 
         # Build the VGG16
-        VGG16 = tf.keras.applications.vgg16(
-        include_top=False,
-        weights="imagenet",
-        input_tensor=None,
-        input_shape=self.build_kwargs["input_shape"],
-        pooling="avg",
-        classes=2,
-        classifier_activation="sigmoid",
+        VGG16_model = tf.keras.applications.VGG16(
+            include_top=False,
+            weights="imagenet",
+            input_tensor=None,
+            input_shape=self.build_kwargs["input_shape"],
+            pooling="avg",
+            classes=2,
+            classifier_activation="sigmoid",
         )
 
-        x = ConvNeXtBase(preprocess_layer)
+        x = VGG16_model(preprocess_layer)
 
         x = tfkl.Dropout(0.4)(x)
-                         
+
         x = tfkl.Dense(
             units=1024,
             activation="relu",
             kernel_initializer=relu_init,
         )(x)
-        
+
         x = tfkl.Dropout(0.3)(x)
 
         x = tfkl.Dense(
@@ -85,7 +85,7 @@ class VGG16(GeneralModel):
             activation="relu",
             kernel_initializer=relu_init,
         )(x)
-        
+
         x = tfkl.Dropout(0.2)(x)
 
         x = tfkl.Dense(
@@ -103,7 +103,7 @@ class VGG16(GeneralModel):
         )(x)
 
         x = tfkl.Dropout(0.1)(x)
-        
+
         output_layer = tfkl.Dense(
             units=self.build_kwargs["output_shape"],
             activation="sigmoid",
