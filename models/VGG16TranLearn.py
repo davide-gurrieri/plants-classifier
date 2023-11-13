@@ -29,7 +29,7 @@ fit_param_1 = {
 }
 
 
-class VGG16(GeneralModel):
+class VGG16TranLearn(GeneralModel):
     def __init__(self, name, build_kwargs, compile_kwargs, fit_kwargs):
         super().__init__(build_kwargs, compile_kwargs, fit_kwargs)
         self.name = name
