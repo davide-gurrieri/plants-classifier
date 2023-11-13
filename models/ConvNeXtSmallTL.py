@@ -61,7 +61,7 @@ class ConvNeXtSmallTL(GeneralModel):
             pooling="avg",
         )
         
-        ResNet152V2TL_layer.trainable = False
+        ConvNeXtSmallTL_layer.trainable = False
         x = ConvNeXtSmall_layer(augmentation_layer)
 
         x = tfkl.Dropout(0.4)(x)
