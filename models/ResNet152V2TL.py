@@ -69,7 +69,7 @@ class ResNet152V2TL(GeneralModel):
         
         ResNet152V2TL_layer.trainable = False
 
-        x = ResNet152V2TL_layer(preprocess_layer,training=False)
+        x = ResNet152V2TL_layer(preprocess_layer)
 
         x = tfkl.Dropout(0.4)(x)
 
