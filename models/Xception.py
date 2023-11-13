@@ -1,9 +1,12 @@
 from imports import *
 from general_model import GeneralModel
+from tensorflow.keras.applications.xception import (
+    preprocess_input as preprocess_input_xception,
+)
 
 build_param_1 = {
     "input_shape": (96, 96, 3),
-    "output_shape": 2,
+    "output_shape": 1,
     "drop_0": 0.3,
     "drop_1": 0.3,
     "drop_2": 0.2,
@@ -19,18 +22,18 @@ build_param_1 = {
 }
 
 compile_param_1 = {
-    "loss": tfk.losses.CategoricalCrossentropy(),
+    "loss": tfk.losses.BinaryCrossentropy(),
     "optimizer": tfk.optimizers.Adam(learning_rate=1e-4),
     "metrics": ["accuracy"],
 }
 
 fit_param_1 = {
-    "batch_size": 128,
+    "batch_size": 64,
     "epochs": 2000,
     "callbacks": [
         tfk.callbacks.EarlyStopping(
             monitor="val_accuracy",
-            patience=20,
+            patience=10,
             mode="max",
             restore_best_weights=True,
         )
@@ -52,25 +55,22 @@ class Xception(GeneralModel):
 
         input_layer = tfkl.Input(shape=input_shape, name="Input")
 
-        scale_layer = tfkl.Rescaling(scale=1 / 127.5, offset=-1)(input_layer)
+        augmentation_layer = self.augmentation(input_layer)
 
-        augmentation = self.augmentation
+        preprocessing_layer = preprocess_input_xception(augmentation_layer)
 
-        preprocessing_layer = augmentation(scale_layer)
-
-        base_model = tfk.applications.Xception(
+        base_model = tf.keras.applications.Xception(
+            include_top=False,
             weights="imagenet",
             input_shape=input_shape,
-            include_top=False,
+            pooling="avg",
         )
-        base_model.trainable = False
+        # base_model.trainable = False
 
         # The base model contains batchnorm layers. We want to keep them in inference mode
         # when we unfreeze the base model for fine-tuning, so we make sure that the
         # base_model is running in inference mode here.
-        x = base_model(preprocessing_layer, training=False)
-
-        x = tfkl.GlobalAveragePooling2D()(x)
+        x = base_model(preprocessing_layer)  # , training=False
 
         x = tfkl.Dropout(self.build_kwargs["drop_0"])(x)
         # x = tfkl.GaussianNoise(self.build_kwargs["g_noise_0"])(x)
@@ -107,7 +107,7 @@ class Xception(GeneralModel):
 
         output_layer = tfkl.Dense(
             units=output_shape,
-            activation="softmax",
+            activation="sigmoid",
             kernel_initializer=tfk.initializers.GlorotUniform(seed=self.seed),
         )(x)
         self.model = tfk.Model(input_layer, output_layer, name=self.name)
