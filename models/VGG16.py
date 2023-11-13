@@ -11,7 +11,7 @@ build_param_1 = {
 
 compile_param_1 = {
     "loss": tfk.losses.BinaryCrossentropy(),
-    "optimizer": tfk.optimizers.Adam(learning_rate=1e-4),
+    "optimizer": tfk.optimizers.Adam(learning_rate=5e-4),
     "metrics": ["accuracy"],
 }
 
@@ -70,15 +70,16 @@ class VGG16(GeneralModel):
 
         x = VGG16_model(preprocess_layer)
 
-        x = tfkl.Dropout(0.4)(x)
 
-        x = tfkl.Dense(
-            units=1024,
-            activation="relu",
-            kernel_initializer=relu_init,
-        )(x)
+        # x = tfkl.Dropout(0.4)(x)
 
-        x = tfkl.Dropout(0.3)(x)
+        # x = tfkl.Dense(
+        #     units=1024,
+        #     activation="relu",
+        #     kernel_initializer=relu_init,
+        # )(x)
+
+        # x = tfkl.Dropout(0.3)(x)
 
         x = tfkl.Dense(
             units=512,
@@ -86,7 +87,7 @@ class VGG16(GeneralModel):
             kernel_initializer=relu_init,
         )(x)
 
-        x = tfkl.Dropout(0.2)(x)
+        # x = tfkl.Dropout(0.2)(x)
 
         x = tfkl.Dense(
             units=64,
@@ -94,7 +95,7 @@ class VGG16(GeneralModel):
             kernel_initializer=relu_init,
         )(x)
 
-        x = tfkl.Dropout(0.1)(x)
+        # x = tfkl.Dropout(0.1)(x)
 
         x = tfkl.Dense(
             units=56,
@@ -102,7 +103,7 @@ class VGG16(GeneralModel):
             kernel_initializer=relu_init,
         )(x)
 
-        x = tfkl.Dropout(0.1)(x)
+        # x = tfkl.Dropout(0.1)(x)
 
         output_layer = tfkl.Dense(
             units=self.build_kwargs["output_shape"],
