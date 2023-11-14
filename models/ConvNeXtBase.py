@@ -18,7 +18,7 @@ fit_param_1 = {
     "callbacks": [
         tfk.callbacks.EarlyStopping(
             monitor="val_accuracy",
-            patience=20,
+            patience=10,
             mode="max",
             restore_best_weights=True,
         )
@@ -30,10 +30,8 @@ class ConvNeXtBase(GeneralModel):
     def __init__(self, name, build_kwargs, compile_kwargs, fit_kwargs):
         super().__init__(build_kwargs, compile_kwargs, fit_kwargs)
         self.name = name
-        
 
     def build(self):
-
         tf.random.set_seed(self.seed)
 
         augmentation = tf.keras.Sequential(
@@ -51,30 +49,30 @@ class ConvNeXtBase(GeneralModel):
         relu_init = tfk.initializers.HeUniform(seed=self.seed)
 
         input_layer = tfkl.Input(shape=self.build_kwargs["input_shape"], name="Input")
-        
+
         augmentation_layer = augmentation(input_layer)
-        
+
         # Build the ResNet50
-        ConvNeXtBase=tfk.applications.ConvNeXtBase(
+        ConvNeXtBase = tfk.applications.ConvNeXtBase(
             include_top=False,
             include_preprocessing=True,
             weights="imagenet",
             input_tensor=None,
             input_shape=self.build_kwargs["input_shape"],
-            classes =2,
+            classes=2,
             pooling="avg",
         )
- 
+
         x = ConvNeXtBase(augmentation_layer)
 
         x = tfkl.Dropout(0.4)(x)
-                         
+
         x = tfkl.Dense(
             units=1024,
             activation="relu",
             kernel_initializer=relu_init,
         )(x)
-        
+
         x = tfkl.Dropout(0.3)(x)
 
         x = tfkl.Dense(
@@ -82,7 +80,7 @@ class ConvNeXtBase(GeneralModel):
             activation="relu",
             kernel_initializer=relu_init,
         )(x)
-        
+
         x = tfkl.Dropout(0.2)(x)
 
         x = tfkl.Dense(
@@ -100,7 +98,7 @@ class ConvNeXtBase(GeneralModel):
         )(x)
 
         x = tfkl.Dropout(0.1)(x)
-        
+
         output_layer = tfkl.Dense(
             units=self.build_kwargs["output_shape"],
             activation="sigmoid",

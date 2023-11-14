@@ -36,10 +36,26 @@ class GeneralModel:
         """
         self.model.compile(**self.compile_kwargs)
 
-    def train(self, x_train, y_train, one_hot=True):
+    def train(
+        self,
+        x_train,
+        y_train,
+        one_hot=True,
+        balanced=False,
+        loss_weights=(1, 1),
+    ):
         """
         Train the model
         """
+        if balanced:
+            class_weights = compute_class_weight(
+                "balanced", classes=np.unique(y_train[:, 0]), y=y_train[:, 0]
+            )
+            self.fit_kwargs["class_weight"] = {
+                0: loss_weights[0] * class_weights[0],
+                1: loss_weights[1] * class_weights[1],
+            }
+
         if one_hot:
             y_train = tfk.utils.to_categorical(y_train)
 
@@ -144,13 +160,36 @@ class GeneralModel:
         print(
             f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f}\nRecall: {recall:.4f}\nConfusion matrix:\n{cm}"
         )
+        return accuracy
 
-    def train_cv(self, x_train_val, y_train_val, num_folds=10):
+    def train_cv(
+        self,
+        x_train_val,
+        y_train_val,
+        model_constructor,
+        num_folds=10,
+        one_hot=False,
+        balanced=False,
+        loss_weights=(1, 1),
+    ):
+        if balanced:
+            class_weights = compute_class_weight(
+                "balanced", classes=np.unique(y_train_val[:, 0]), y=y_train_val[:, 0]
+            )
+            self.fit_kwargs["class_weight"] = {
+                0: loss_weights[0] * class_weights[0],
+                1: loss_weights[1] * class_weights[1],
+            }
+
         self.cv_n_fold = num_folds
         # Create a cross-validation object
         kfold = StratifiedKFold(
             n_splits=num_folds, shuffle=True, random_state=self.seed
         )
+
+        build_kwargs = dict(self.build_kwargs)
+        compile_kwargs = dict(self.compile_kwargs)
+        fit_kwargs = dict(self.fit_kwargs)
 
         # Loop through each fold
         for fold_idx, (train_idx, valid_idx) in enumerate(
@@ -159,34 +198,42 @@ class GeneralModel:
             print(f"Starting training on fold num: {fold_idx + 1}")
 
             # Build a new model for each fold
-            self.build()
-            self.compile()
-            self.train_val(
+
+            model_obj = model_constructor(
+                self.name + "_fold_" + f"{fold_idx+1}",
+                build_kwargs.copy(),
+                compile_kwargs.copy(),
+                fit_kwargs.copy(),
+            )
+            model_obj.build()
+            model_obj.compile()
+            model_obj.train_val(
                 x_train_val[train_idx],
                 y_train_val[train_idx],
                 x_train_val[valid_idx],
                 y_train_val[valid_idx],
+                one_hot=one_hot,
+                balanced=False,
             )
 
             # Evaluate the model on the validation data for this fold
             # Returns the loss value & metrics values for the model in test mode.
-            score = self.model.evaluate(
+            score = model_obj.evaluate(
                 x_train_val[valid_idx],
                 y_train_val[valid_idx],
-                verbose=0,
             )
-            self.cv_scores.append(
-                score[1]
-            )  # score[0] is the loss, score[1] is the first metric
+            self.cv_scores.append(score)
 
             # Calculate the best epoch for early stopping
             best_epoch = (
-                # len(self.history["loss"]) - self.fit_kwargs["callbacks"][0].patience
+                len(model_obj.history_val["loss"])
+                - model_obj.fit_kwargs["callbacks"][0].patience
             )
+
             self.cv_best_epochs.append(best_epoch)
 
             # Store the training history for this fold
-            self.cv_histories.append(self.history)
+            self.cv_histories.append(model_obj.history_val)
 
         # Print mean and standard deviation of Accuracy scores
         print("Score statistics:")
@@ -202,7 +249,7 @@ class GeneralModel:
         print("Training on the entire dataset...")
         self.build()
         self.compile()
-        self.train(x_train_val, y_train_val)
+        self.train(x_train_val, y_train_val, one_hot=one_hot, balanced=False)
 
     def plot_cv_histories(self):
         # Define a list of colors for plotting
