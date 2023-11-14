@@ -15,6 +15,7 @@ class modelEnsemble:
         
         for m in self.models:
             predictions = np.round(m.predict(X))
+            predictions = np.squeeze(predictions)
             labels.append(predictions)
 
         # Debugging: Print shapes of predictions
