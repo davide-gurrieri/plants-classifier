@@ -46,8 +46,9 @@ class modelEnsemble:
     from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
 
 
-    def evaluate(self, x_eval, y_eval, predictions):
-
+    def evaluate(self, x_eval, y_eval):
+        
+        predictions = self.predict(x_eval)
         predictions = predictions.astype(int)[:, np.newaxis]
         accuracy = accuracy_score(y_eval, predictions)
         precision = precision_score(y_eval, predictions)
