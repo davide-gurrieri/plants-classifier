@@ -1,7 +1,7 @@
 from imports import *
 from general_model import GeneralModel
-from tensorflow.keras.applications.vgg16 import (
-    preprocess_input as preprocess_input_vgg16,
+from tensorflow.keras.applications.resnet_v2 import (
+    preprocess_input as preprocess_input_resnet_v2,
 )
 
 build_param_1 = {
@@ -11,7 +11,7 @@ build_param_1 = {
 
 compile_param_1 = {
     "loss": tfk.losses.BinaryCrossentropy(),
-    "optimizer": tfk.optimizers.Adam(learning_rate=5e-4),
+    "optimizer": tfk.optimizers.Adam(learning_rate=1e-4),
     "metrics": ["accuracy"],
 }
 
@@ -21,7 +21,7 @@ fit_param_1 = {
     "callbacks": [
         tfk.callbacks.EarlyStopping(
             monitor="val_accuracy",
-            patience=20,
+            patience=10,
             mode="max",
             restore_best_weights=True,
         )
@@ -29,7 +29,7 @@ fit_param_1 = {
 }
 
 
-class VGG16(GeneralModel):
+class ResNet152V2TL(GeneralModel):
     def __init__(self, name, build_kwargs, compile_kwargs, fit_kwargs):
         super().__init__(build_kwargs, compile_kwargs, fit_kwargs)
         self.name = name
@@ -55,31 +55,31 @@ class VGG16(GeneralModel):
 
         augmentation_layer = augmentation(input_layer)
 
-        preprocess_layer = preprocess_input_vgg16(augmentation_layer)
+        preprocess_layer = preprocess_input_resnet_v2(augmentation_layer)
 
-        # Build the VGG16
-        VGG16_model = tf.keras.applications.VGG16(
+        # Build the ResNet50
+        ResNet152V2TL_layer = tfk.applications.ResNet152V2(
             include_top=False,
             weights="imagenet",
             input_tensor=None,
             input_shape=self.build_kwargs["input_shape"],
-            pooling="avg",
             classes=2,
-            classifier_activation="sigmoid",
+            pooling="avg",
         )
+        
+        ResNet152V2TL_layer.trainable = False
 
-        x = VGG16_model(preprocess_layer)
+        x = ResNet152V2TL_layer(preprocess_layer)
 
+        x = tfkl.Dropout(0.4)(x)
 
-        # x = tfkl.Dropout(0.4)(x)
+        x = tfkl.Dense(
+            units=1024,
+            activation="relu",
+            kernel_initializer=relu_init,
+        )(x)
 
-        # x = tfkl.Dense(
-        #     units=1024,
-        #     activation="relu",
-        #     kernel_initializer=relu_init,
-        # )(x)
-
-        # x = tfkl.Dropout(0.3)(x)
+        x = tfkl.Dropout(0.3)(x)
 
         x = tfkl.Dense(
             units=512,
@@ -87,7 +87,7 @@ class VGG16(GeneralModel):
             kernel_initializer=relu_init,
         )(x)
 
-        # x = tfkl.Dropout(0.2)(x)
+        x = tfkl.Dropout(0.2)(x)
 
         x = tfkl.Dense(
             units=64,
@@ -95,7 +95,7 @@ class VGG16(GeneralModel):
             kernel_initializer=relu_init,
         )(x)
 
-        # x = tfkl.Dropout(0.1)(x)
+        x = tfkl.Dropout(0.1)(x)
 
         x = tfkl.Dense(
             units=56,
@@ -103,7 +103,7 @@ class VGG16(GeneralModel):
             kernel_initializer=relu_init,
         )(x)
 
-        # x = tfkl.Dropout(0.1)(x)
+        x = tfkl.Dropout(0.1)(x)
 
         output_layer = tfkl.Dense(
             units=self.build_kwargs["output_shape"],

@@ -29,7 +29,7 @@ fit_param_1 = {
 }
 
 
-class VGG16(GeneralModel):
+class VGG16TranLearn(GeneralModel):
     def __init__(self, name, build_kwargs, compile_kwargs, fit_kwargs):
         super().__init__(build_kwargs, compile_kwargs, fit_kwargs)
         self.name = name
@@ -68,8 +68,9 @@ class VGG16(GeneralModel):
             classifier_activation="sigmoid",
         )
 
-        x = VGG16_model(preprocess_layer)
+        VGG16_model.trainable = False
 
+        x = VGG16_model(preprocess_layer, training=False)
 
         # x = tfkl.Dropout(0.4)(x)
 
