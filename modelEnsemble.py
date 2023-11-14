@@ -2,6 +2,13 @@ import os
 import tensorflow as tf
 import numpy as np
 from scipy import stats
+from sklearn.metrics import (
+    accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    confusion_matrix,
+)
 
 
 class modelEnsemble:
