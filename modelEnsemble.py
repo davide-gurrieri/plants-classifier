@@ -48,7 +48,7 @@ class modelEnsemble:
 
     def evaluate(self, x_eval, y_eval, predictions):
 
-        predictions = predictions.astype(int)
+        predictions = predictions.astype(int)[:, np.newaxis]
         accuracy = accuracy_score(y_eval, predictions)
         precision = precision_score(y_eval, predictions)
         recall = recall_score(y_eval, predictions)
