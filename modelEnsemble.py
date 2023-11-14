@@ -1,6 +1,7 @@
 import os
 import tensorflow as tf
 import numpy as np
+from scipy import stats
 
 
 class modelEnsemble:
@@ -19,7 +20,7 @@ class modelEnsemble:
         
         labels = np.array(labels)
         labels = np.transpose(labels, (1, 0))
-        ensemble_labels = mode(labels, axis=-1)[0]
+        ensemble_labels = stats.mode(labels, axis=-1)[0]
         ensemble_labels = np.squeeze(ensemble_labels)
 
 
