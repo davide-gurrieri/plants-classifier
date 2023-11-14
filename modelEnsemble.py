@@ -28,7 +28,7 @@ class modelEnsemble:
         # Debugging: Print shape of labels before mode
         print(labels.shape)
 
-        ensemble_labels = mode(labels, axis=-1)[0]
+        ensemble_labels = stats.mode(labels, axis=-1)[0]
         ensemble_labels = np.squeeze(ensemble_labels)
 
         # Debugging: Print shape of ensemble_labels before returning
