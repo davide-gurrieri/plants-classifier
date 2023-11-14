@@ -62,13 +62,14 @@ def plot_images(
     num_cols=20,
     show=True,
     save=False,
+    show_label=False,
     name="images.pdf",
 ):
     # Calcola il numero totale di righe necessarie
     num_rows = (num_img + num_cols - 1) // num_cols
 
     # Crea una figura con il numero corretto di righe e colonne
-    fig, axes = plt.subplots(num_rows, num_cols, figsize=(15, num_rows))
+    fig, axes = plt.subplots(num_rows, num_cols, figsize=(15 / 20 * num_cols, num_rows))
 
     # Itera attraverso il numero selezionato di immagini
     for i in range(num_img):
@@ -77,7 +78,10 @@ def plot_images(
         ax = axes[row_idx, col_idx]
 
         ax.imshow(X_train_val[i] / 255)
-        ax.set_title(f"{i}-{y_train_val[i][0]}")
+        if show_label:
+            ax.set_title(f"{i}-{y_train_val[i][0]}")
+        else:
+            ax.set_title(f"{i}")
         ax.axis("off")
 
     # Rimuovi eventuali assi extra che non sono stati utilizzati
