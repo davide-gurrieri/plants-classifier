@@ -35,3 +35,18 @@ class modelEnsemble:
         print(ensemble_labels.shape)
 
         return ensemble_labels
+
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
+
+
+    def evaluate(self, x_eval, y_eval, predictions):
+
+        predictions = predictions.astype(int)
+        accuracy = accuracy_score(y_eval, predictions)
+        precision = precision_score(y_eval, predictions)
+        recall = recall_score(y_eval, predictions)
+        cm = confusion_matrix(y_eval, predictions)
+        print(
+            f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f}\nRecall: {recall:.4f}\nConfusion matrix:\n{cm}"
+        )
+
