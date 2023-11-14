@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 
 
-class modelEnsamble:
+class modelEnsemble:
     def __init__(self, model_paths):
         self.models = [tf.keras.models.load_model(model_path) for model_path in model_paths]
 
@@ -13,7 +13,7 @@ class modelEnsamble:
         labels=[]
         
         for m in self.models:
-            predictions = np.round(m.predict(X,axis=1))
+            predictions = np.round(m.predict(X))
             labels.append(predictions)
 
         
