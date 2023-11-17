@@ -38,27 +38,12 @@ class GeneralModel:
 
     def train(
         self,
-        x_train,
-        y_train,
-        one_hot=True,
-        balanced=False,
-        loss_weights=(1, 1),
+        x_train=None,
+        y_train=None,
     ):
         """
         Train the model
         """
-        if balanced:
-            class_weights = compute_class_weight(
-                "balanced", classes=np.unique(y_train[:, 0]), y=y_train[:, 0]
-            )
-            self.fit_kwargs["class_weight"] = {
-                0: loss_weights[0] * class_weights[0],
-                1: loss_weights[1] * class_weights[1],
-            }
-
-        if one_hot:
-            y_train = tfk.utils.to_categorical(y_train)
-
         self.history = self.model.fit(
             x=x_train,
             y=y_train,
@@ -67,34 +52,19 @@ class GeneralModel:
 
     def train_val(
         self,
-        x_train,
-        y_train,
-        x_val,
-        y_val,
-        one_hot=True,
-        balanced=False,
-        loss_weights=(1, 1),
+        x_train=None,
+        y_train=None,
+        x_val=None,
+        y_val=None,
     ):
         """
         Train the model
         """
-        if balanced:
-            class_weights = compute_class_weight(
-                "balanced", classes=np.unique(y_train[:, 0]), y=y_train[:, 0]
-            )
-            self.fit_kwargs["class_weight"] = {
-                0: loss_weights[0] * class_weights[0],
-                1: loss_weights[1] * class_weights[1],
-            }
-
-        if one_hot:
-            y_train = tfk.utils.to_categorical(y_train)
-            y_val = tfk.utils.to_categorical(y_val)
-
+        validation_data = x_val if y_val is None else (x_val, y_val)
         self.history_val = self.model.fit(
             x=x_train,
             y=y_train,
-            validation_data=(x_val, y_val),
+            validation_data=validation_data,
             **self.fit_kwargs,
         ).history
 
@@ -134,6 +104,18 @@ class GeneralModel:
             plt.grid(alpha=0.3)
 
         plt.show()
+        
+    def predict(self, x_eval):
+        predictions = self.model.predict(x_eval, verbose=0)
+        if self.build_kwargs["output_shape"] == 2:
+            predictions = np.argmax(predictions, axis=-1)
+        else:
+            predictions = np.squeeze(predictions, axis=1)
+            predictions = np.ndarray.round(predictions)
+        predictions = predictions.astype(int)
+        return predictions
+        
+        
 
     def evaluate(self, x_eval, y_eval):
         """
@@ -146,13 +128,7 @@ class GeneralModel:
         y_eval : numpy.ndarray
             Evaluation target data
         """
-        predictions = self.model.predict(x_eval, verbose=0)
-        if self.build_kwargs["output_shape"] == 2:
-            # predictions is a n x 2 matrix
-            predictions = np.argmax(predictions, axis=-1)
-        else:
-            # predictions is a probability vector
-            predictions = np.ndarray.round(predictions).astype(int)
+        predictions = self.predict(x_eval)
         accuracy = accuracy_score(y_eval, predictions)
         precision = precision_score(y_eval, predictions)
         recall = recall_score(y_eval, predictions)

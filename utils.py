@@ -5,13 +5,13 @@ This module contains utilities for the ANN course.
 from imports import *
 
 
-def data_processing(name="data/public_data.npz"):
+def load_data(name="data/public_data.npz"):
     # Load data
     dataset = np.load("data/public_data.npz", allow_pickle=True)
     X_train_val = dataset["data"]
     y_train_val = dataset["labels"]
     labels = {0: "healthy", 1: "unhealthy"}
-
+    
     # convert elements of y_train_val to 0 and 1
     y_train_val = np.array([0 if label == "healthy" else 1 for label in y_train_val])
 
@@ -27,26 +27,22 @@ def data_processing(name="data/public_data.npz"):
             index_to_remove.append(i)
     X_outliers = X_train_val[index_to_remove]
     y_outliers = y_train_val[index_to_remove]
-    X_train_val_no_out = np.delete(X_train_val, index_to_remove, axis=0)
-    y_train_val_no_out = np.delete(y_train_val, index_to_remove, axis=0)
+    X_train_val = np.delete(X_train_val, index_to_remove, axis=0)
+    y_train_val = np.delete(y_train_val, index_to_remove, axis=0)
 
-    # Print dataset information
-    counting_no_out = pd.DataFrame(y_train_val_no_out, columns=["status"])[
-        "status"
-    ].value_counts()
+    
     counting = pd.DataFrame(y_train_val, columns=["status"])["status"].value_counts()
-    dataset_info = f"The dataset without outliers contains {len(X_train_val_no_out)} images of plants, {counting_no_out[0]} healthy and {counting_no_out[1]} unhealthy."
-    dataset_info += f"\nThe ratio of the healthy plants over the total is {counting_no_out[0]/len(X_train_val_no_out):.2f}."
-    dataset_info += f"\nThe ratio of the healthy plants over the total considering also outliers is {counting[0]/len(X_train_val):.2f}."
-    dataset_info += f"\nEach image has shape {X_train_val_no_out[0].shape}."
+    
+    # Print dataset information
+    dataset_info = f"The dataset without outliers contains {len(X_train_val)} images of plants, {counting[0]} healthy and {counting[1]} unhealthy."
+    dataset_info += f"\nThe ratio of the healthy plants over the total is {counting[0]/len(X_train_val):.2f}."
+    dataset_info += f"\nEach image has shape {X_train_val[0].shape}."
     dataset_info += f"\nThe labels encoding is: {labels}."
     print(dataset_info)
 
     return (
         X_train_val,
         y_train_val,
-        X_train_val_no_out,
-        y_train_val_no_out,
         labels,
         X_outliers,
         y_outliers,
@@ -64,6 +60,7 @@ def plot_images(
     save=False,
     show_label=False,
     name="images.pdf",
+    
 ):
     # Calcola il numero totale di righe necessarie
     num_rows = (num_img + num_cols - 1) // num_cols
@@ -98,7 +95,14 @@ def plot_images(
         plt.close()
 
 
-import numpy as np
+def visualize_dataset(dataset, title):
+    plt.figure(figsize=(6, 6)).suptitle(title, fontsize=18)
+    for i, samples in enumerate(iter(dataset.take(9))):
+        images = samples["images"]
+        plt.subplot(3, 3, i + 1)
+        plt.imshow(images[0].numpy().astype("uint8"))
+        plt.axis("off")
+    plt.show()
 
 
 def sample_dataset_with_labels(n, X, y, aug=True, noise_std=0.1):
