@@ -148,6 +148,7 @@ class GeneralModel:
             start = 0
         if end is None:
             end = len(self.model.get_layer(self.base_model.name).layers)
+        self.model.get_layer(self.base_model.name).trainable = True
         for layer in self.model.get_layer(self.base_model.name).layers[start:end]:
             if not isinstance(layer, tf.keras.layers.BatchNormalization):
                 layer.trainable=True
