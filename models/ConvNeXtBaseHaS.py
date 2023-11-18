@@ -1,7 +1,6 @@
 from imports import *
-from general_model import GeneralModel
+from general_model import GeneralModel, HideAndSeekLayer
 # from tensorflow.keras.layers import Layer
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import random
 
 build_param_1 = {
@@ -27,56 +26,6 @@ fit_param_1 = {
         )
     ],
 }
-
-class HideAndSeekLayer(tf.keras.layers.Layer):                  # polimorfismo sulla classe dei layer
-  def __init__(self,
-               hiding_prob,                                     # il metodo ha bisogno solo della probabilitá che una patch non sia visibile
-               grid_h ):                                        # e della dimensione della griglia su cui costruire la mesh di patches
-
-    super(HideAndSeekLayer, self).__init__()                    # eredito le proprietá dall'astrazione del layer
-    self.hiding_prob = hiding_prob
-    self.grid_size   = (grid_h,grid_h)
-    self.training_mode = True
-
-  def build(self, input_shape):                                 # Inizializzazione
-    0                                                           # niente da inizializzare...
-
-
-  def set_training_mode(self,val):
-    self.training_mode = val
-  def get_training_mode(self):
-    return self.training_mode
-
-
-  def call(self, inputs):                                       # Chiamata
-    if not self.training_mode:
-      return inputs
-    mask = tf.random.uniform(
-                      tf.tuple(
-                      (len(inputs),
-                       self.grid_size[0],
-                       self.grid_size[1]
-                       )
-                       ) #considero la shape dell input privata della dimensione del colore
-                  )
-
-    # print(mask.shape)
-
-
-    mask = (mask > self.hiding_prob)                           # nella maschera hiding prob descrive la probabilitá di oscuramento
-    mask = tf.cast(mask, tf.float32)                           # ricasto a float
-
-    mask = tf.image.resize(mask[:,:,:,None], inputs.shape[1 :-1], method = 'nearest')[:,:,:,0]
-
-
-    mask = tf.concat([mask[:,:,:,None],
-                      mask[:,:,:,None],
-                      mask[:,:,:,None]], axis =3)                 # ri-introduco la dimensione del colore
-    # print(mask.shape)
-
-
-
-    return inputs * mask                                       # prodotto di Hadamard per oscurare
   
 class ConvNeXtBaseHaS(GeneralModel):
     def __init__(self, name, build_kwargs, compile_kwargs, fit_kwargs):
@@ -110,10 +59,7 @@ class ConvNeXtBaseHaS(GeneralModel):
         # hiding probability
         hide_prob = 0.5
 
-        # randomly choose one grid size
-        grid_size= grid_sizes[random.randint(0,len(grid_sizes)-1)]
-
-        hide_and_seek_layer = HideAndSeekLayer(hide_prob,grid_size)
+        hide_and_seek_layer = HideAndSeekLayer(hide_prob,grid_sizes)
 
         input_layer = tfkl.Input(shape=self.build_kwargs["input_shape"], name="Input")
 
