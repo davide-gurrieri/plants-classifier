@@ -1,6 +1,6 @@
 from imports import *
 from general_model import GeneralModel
-from tensorflow.keras.layers import Layer
+# from tensorflow.keras.layers import Layer
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import random
 
@@ -28,43 +28,56 @@ fit_param_1 = {
     ],
 }
 
-class HidePatchLayer(Layer):
-    def __init__(self, hide_prob=0.5, grid_sizes=[0, 4, 8, 16, 32], **kwargs):
-        super(HidePatchLayer, self).__init__(**kwargs)
-        self.hide_prob = hide_prob
-        self.grid_sizes = grid_sizes
+class HideAndSeekLayer(tf.keras.layers.Layer):                  # polimorfismo sulla classe dei layer
+  def __init__(self,
+               hiding_prob,                                     # il metodo ha bisogno solo della probabilitá che una patch non sia visibile
+               grid_h ):                                        # e della dimensione della griglia su cui costruire la mesh di patches
 
-    def call(self, inputs, training=None):
-        if training:
-            img = tf.convert_to_tensor(inputs)
+    super(HideAndSeekLayer, self).__init__()                    # eredito le proprietá dall'astrazione del layer
+    self.hiding_prob = hiding_prob
+    self.grid_size   = (grid_h,grid_h)
+    self.training_mode = True
 
-            img = tf.identity(inputs)
-            # img_aug = np.copy(img)
-            # s = img_aug.shape
-            s = img.shape
-
-            wd, ht = s[1], s[2]
-
-            # randomly choose one grid size
-            grid_size = self.grid_sizes[random.randint(0, len(self.grid_sizes) - 1)]
-
-            # hide the patches
-            if grid_size != 0:
-                for x in range(0, wd, grid_size):
-                    for y in range(0, ht, grid_size):
-                        x_end = min(wd, x + grid_size)
-                        y_end = min(ht, y + grid_size)
-                        if random.random() <= self.hide_prob:
-                            img = tf.tensor_scatter_nd_update(
-                                img,
-                                tf.where(tf.ones_like(img[..., :1])),
-                                tf.zeros_like(img[..., :1])
-                            )
-            return img
-        else:
-            return inputs
+  def build(self, input_shape):                                 # Inizializzazione
+    0                                                           # niente da inizializzare...
 
 
+  def set_training_mode(self,val):
+    self.training_mode = val
+  def get_training_mode(self):
+    return self.training_mode
+
+
+  def call(self, inputs):                                       # Chiamata
+    if not self.training_mode:
+      return inputs
+    mask = tf.random.uniform(
+                      tf.tuple(
+                      (len(inputs),
+                       self.grid_size[0],
+                       self.grid_size[1]
+                       )
+                       ) #considero la shape dell input privata della dimensione del colore
+                  )
+
+    # print(mask.shape)
+
+
+    mask = (mask > self.hiding_prob)                           # nella maschera hiding prob descrive la probabilitá di oscuramento
+    mask = tf.cast(mask, tf.float32)                           # ricasto a float
+
+    mask = tf.image.resize(mask[:,:,:,None], inputs.shape[1 :-1], method = 'nearest')[:,:,:,0]
+
+
+    mask = tf.concat([mask[:,:,:,None],
+                      mask[:,:,:,None],
+                      mask[:,:,:,None]], axis =3)                 # ri-introduco la dimensione del colore
+    # print(mask.shape)
+
+
+
+    return inputs * mask                                       # prodotto di Hadamard per oscurare
+  
 class ConvNeXtBaseHaS(GeneralModel):
     def __init__(self, name, build_kwargs, compile_kwargs, fit_kwargs):
         super().__init__(build_kwargs, compile_kwargs, fit_kwargs)
@@ -91,13 +104,13 @@ class ConvNeXtBaseHaS(GeneralModel):
 
         relu_init = tfk.initializers.HeUniform(seed=self.seed)
         
-        hide_patch_layer = HidePatchLayer()
+        hide_and_seek_layer = HideAndSeekLayer(0.5,8)
 
         input_layer = tfkl.Input(shape=self.build_kwargs["input_shape"], name="Input")
 
         augmentation_layer = augmentation(input_layer)
 
-        augmentation_layer = hide_patch_layer(augmentation_layer, training=True)
+        augmentation_layer = hide_and_seek_layer(augmentation_layer)
 
         # Build the ConvNeXtBase
         ConvNeXtBase = tfk.applications.ConvNeXtBase(
