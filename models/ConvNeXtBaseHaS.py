@@ -11,7 +11,7 @@ build_param_1 = {
 
 compile_param_1 = {
     "loss": tfk.losses.BinaryCrossentropy(),
-    "optimizer": tfk.optimizers.Adam(learning_rate=1e-4),
+    "optimizer": tfk.optimizers.Adam(learning_rate=5e-4),
     "metrics": ["accuracy"],
 }
 
@@ -21,7 +21,7 @@ fit_param_1 = {
     "callbacks": [
         tfk.callbacks.EarlyStopping(
             monitor="val_accuracy",
-            patience=10,
+            patience=20,
             mode="max",
             restore_best_weights=True,
         )
@@ -103,8 +103,17 @@ class ConvNeXtBaseHaS(GeneralModel):
         )
 
         relu_init = tfk.initializers.HeUniform(seed=self.seed)
-        
-        hide_and_seek_layer = HideAndSeekLayer(0.5,8)
+
+        # possible grid size, 0 means no hiding
+        grid_sizes=[0,2,4,8,16]
+
+        # hiding probability
+        hide_prob = 0.5
+
+        # randomly choose one grid size
+        grid_size= grid_sizes[random.randint(0,len(grid_sizes)-1)]
+
+        hide_and_seek_layer = HideAndSeekLayer(hide_prob,grid_size)
 
         input_layer = tfkl.Input(shape=self.build_kwargs["input_shape"], name="Input")
 
