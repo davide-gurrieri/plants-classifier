@@ -19,20 +19,20 @@ compile_param_2 = {
 }
 
 fit_param_1 = {
-    "epochs": 10,
+    "epochs": 15,
 }
 
 fit_param_2 = {
-    "epochs": 70,
+    "epochs": 100,
 }
 
 
-class ConvNeXtBaseCutmixMixupHaS(GeneralModel):
+class ConvNeXtLargeCutmixMixupHaS(GeneralModel):
     def __init__(self, name, build_kwargs, compile_kwargs, fit_kwargs, starting_model=None):
         super().__init__(build_kwargs, compile_kwargs, fit_kwargs)
         self.name = name
         
-        self.base_model = tfk.applications.ConvNeXtBase(
+        self.base_model = tfk.applications.ConvNeXtLarge(
             include_top=False,
             weights="imagenet",
             input_shape=build_kwargs["input_shape"],
