@@ -4,8 +4,6 @@ from tensorflow.keras.layers import Layer
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import random
 
-
-
 build_param_1 = {
     "input_shape": (96, 96, 3),
     "output_shape": 1,
@@ -38,11 +36,14 @@ class HidePatchLayer(Layer):
 
     def call(self, inputs, training=None):
         if training:
-            img = tf.identity(inputs)
-            img_aug = np.copy(img.numpy())
+            img = tf.convert_to_tensor(inputs)
 
-            s = img_aug.shape
-            wd, ht = s[0], s[1]
+            img = tf.identity(inputs)
+            # img_aug = np.copy(img)
+            # s = img_aug.shape
+            s = img.shape
+
+            wd, ht = s[1], s[2]
 
             # randomly choose one grid size
             grid_size = self.grid_sizes[random.randint(0, len(self.grid_sizes) - 1)]
@@ -54,14 +55,17 @@ class HidePatchLayer(Layer):
                         x_end = min(wd, x + grid_size)
                         y_end = min(ht, y + grid_size)
                         if random.random() <= self.hide_prob:
-                            img_aug[x:x_end, y:y_end, :] = 0
-
-            return tf.convert_to_tensor(img_aug)
+                            img = tf.tensor_scatter_nd_update(
+                                img,
+                                tf.where(tf.ones_like(img[..., :1])),
+                                tf.zeros_like(img[..., :1])
+                            )
+            return img
         else:
             return inputs
 
 
-class ConvNeXtBase(GeneralModel):
+class ConvNeXtBaseHaS(GeneralModel):
     def __init__(self, name, build_kwargs, compile_kwargs, fit_kwargs):
         super().__init__(build_kwargs, compile_kwargs, fit_kwargs)
         self.name = name
@@ -81,7 +85,6 @@ class ConvNeXtBase(GeneralModel):
                 # tfkl.RandomCrop(height=64, width=64),
                 tfkl.RandomZoom(height_factor=0.2),
                 # tfkl.RandomContrast(factor=0.8),
-                tfkl.Lambda(datagen.random_transform, input_shape=self.build_kwargs["input_shape"]),
             ],
             name="preprocessing",
         )
