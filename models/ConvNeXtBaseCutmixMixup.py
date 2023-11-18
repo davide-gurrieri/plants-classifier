@@ -18,21 +18,20 @@ compile_param_2 = {
     "metrics": ["accuracy"],
 }
 
-early_stopping_1 = tfk.callbacks.EarlyStopping(
-                        monitor="val_accuracy",
-                        patience=15,
-                        mode="max",
-                        restore_best_weights=True,
-                    )
-
 fit_param_1 = {
     "epochs": 200,
-    "callbacks": [early_stopping_1],
+    "callbacks": [
+        tfk.callbacks.EarlyStopping(
+            monitor="val_accuracy",
+            patience=15,
+            mode="max",
+            restore_best_weights=True,
+        )
+    ],
 }
 
 fit_param_2 = {
-    "epochs": early_stopping_1.best_epoch + 200,
-    "initial_epoch": early_stopping_1.best_epoch,
+    "epochs": 200,
     "callbacks": [
         tfk.callbacks.EarlyStopping(
             monitor="val_accuracy",
