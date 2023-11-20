@@ -1,5 +1,5 @@
 from imports import *
-from general_model import GeneralModel
+from general_model import GeneralModel, HideAndSeekLayer
 
 build_param_1 = {
     "input_shape": (96, 96, 3),

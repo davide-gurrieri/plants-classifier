@@ -1,5 +1,5 @@
 from imports import *
-from general_model import GeneralModel, HideAndSeekLayer
+from general_model import GeneralModel
 
 build_param_1 = {
     "input_shape": (96, 96, 3),
@@ -7,52 +7,35 @@ build_param_1 = {
 }
 
 compile_param_1 = {
-    "loss": tfk.losses.CategoricalCrossentropy(),
-    "optimizer": tfk.optimizers.Adam(learning_rate=1e-3),
+    "loss": tfk.losses.CategoricalCrossentropy(label_smoothing=0.1),
+    "optimizer": tfk.optimizers.Adam(learning_rate=1e-4),
     "metrics": ["accuracy"],
 }
 
 compile_param_2 = {
-    "loss": tfk.losses.CategoricalCrossentropy(),
+    "loss": tfk.losses.CategoricalCrossentropy(label_smoothing=0.1),
     "optimizer": tfk.optimizers.Adam(learning_rate=5e-5),
     "metrics": ["accuracy"],
 }
 
 fit_param_1 = {
-    "epochs": 200,
-    "callbacks": [
-        tfk.callbacks.EarlyStopping(
-            monitor="val_accuracy",
-            patience=15,
-            mode="max",
-            restore_best_weights=True,
-        )
-    ],
+    "epochs": 15,
 }
 
 fit_param_2 = {
-    "epochs": 200,
-    "callbacks": [
-        tfk.callbacks.EarlyStopping(
-            monitor="val_accuracy",
-            patience=15,
-            mode="max",
-            restore_best_weights=True,
-        )
-    ],
+    "epochs": 70,
 }
 
 
-class ConvNeXtBaseCutmixMixup3(GeneralModel):
+class FinalModel(GeneralModel):
     def __init__(self, name, build_kwargs, compile_kwargs, fit_kwargs, starting_model=None):
         super().__init__(build_kwargs, compile_kwargs, fit_kwargs)
         self.name = name
         
-        self.base_model = tfk.applications.ConvNeXtBase(
+        self.base_model = tfk.applications.ConvNeXtLarge(
             include_top=False,
             weights="imagenet",
             input_shape=build_kwargs["input_shape"],
-            pooling="avg",
         )
         
         if starting_model is not None:
@@ -66,8 +49,8 @@ class ConvNeXtBaseCutmixMixup3(GeneralModel):
         augmentation = tf.keras.Sequential(
             [
                 tfkl.RandomFlip("horizontal_and_vertical"),
-                tfkl.RandomRotation(factor=0.35, fill_mode='reflect'),
-                tfkl.RandomZoom(height_factor=-0.15),
+                tfkl.RandomRotation(factor=0.3, fill_mode='reflect'),
+                tfkl.RandomZoom(height_factor=0.1),
             ],
             name="augmentation",
         )
@@ -83,9 +66,16 @@ class ConvNeXtBaseCutmixMixup3(GeneralModel):
         self.base_model.trainable = False
         x = self.base_model(preprocess_layer)
 
-        #x = tfkl.Flatten()(x)
+        x = tfkl.Flatten()(x)
 
         x = tfkl.Dropout(0.4)(x)
+
+        x = tfkl.Dense(
+            units=1024,
+            activation="relu",
+            kernel_regularizer=tf.keras.regularizers.L1L2(1e-3),
+            kernel_initializer=relu_init,
+        )(x)
 
         x = tfkl.Dense(
             units=512,
@@ -94,7 +84,7 @@ class ConvNeXtBaseCutmixMixup3(GeneralModel):
             kernel_initializer=relu_init,
         )(x)
 
-        x = tfkl.Dropout(0.1)(x)
+        x = tfkl.Dropout(0.3)(x)
 
         output_layer = tfkl.Dense(
             units=self.build_kwargs["output_shape"],

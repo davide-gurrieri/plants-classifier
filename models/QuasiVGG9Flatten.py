@@ -14,19 +14,24 @@ compile_param_1 = {
 
 fit_param_1 = {
     "batch_size": 128,
-    "epochs": 2,
+    "epochs": 200,
     "callbacks": [
         tfk.callbacks.EarlyStopping(
             monitor="val_accuracy",
-            patience=40,
+            patience=20,
             mode="max",
             restore_best_weights=True,
         )
     ],
 }
 
+fit_param_2 = {
+    "batch_size": 128,
+    "epochs": 100,
+}
 
-class QuasiVGG9(GeneralModel):
+
+class QuasiVGG9Flatten(GeneralModel):
     def __init__(self, name, build_kwargs, compile_kwargs, fit_kwargs):
         super().__init__(build_kwargs, compile_kwargs, fit_kwargs)
         self.name = name
@@ -34,27 +39,16 @@ class QuasiVGG9(GeneralModel):
     def build(self):
         tf.random.set_seed(self.seed)
 
-        tfk.backend.clear_session()
-
         relu_init = tfk.initializers.HeUniform(seed=self.seed)
-
-        self.augmentation = tf.keras.Sequential(
-            [
-                tfkl.RandomFlip(mode="horizontal"),
-                tfkl.RandomFlip(mode="vertical"),
-                tfkl.RandomRotation(factor=0.25),
-                # tfkl.RandomCrop(height=64, width=64),
-                # tfkl.RandomZoom(height_factor=0.3),
-            ],
-            name="preprocessing",
-        )
 
         # Build the neural network layer by layer
         input_layer = tfkl.Input(shape=self.build_kwargs["input_shape"], name="Input")
 
         scale_layer = tfkl.Rescaling(scale=1 / 255, offset=0)(input_layer)
 
-        preprocessing_layer = self.augmentation(scale_layer)
+        augmentation = self.augmentation
+
+        preprocessing_layer = augmentation(scale_layer)
 
         x = tfkl.Conv2D(
             filters=32,
@@ -147,27 +141,7 @@ class QuasiVGG9(GeneralModel):
             kernel_initializer=relu_init,
             name="conv41",
         )(x)
-
-        # x = tfkl.MaxPooling2D(name="mp4")(x)
-
-        # x = tfkl.Conv2D(
-        #     filters=1024,
-        #     kernel_size=3,
-        #     padding="same",
-        #     activation="relu",
-        #     kernel_initializer=relu_init,
-        #     name="conv50",
-        # )(x)
-        # x = tfkl.Conv2D(
-        #     filters=1024,
-        #     kernel_size=3,
-        #     padding="same",
-        #     activation="relu",
-        #     kernel_initializer=relu_init,
-        #     name="conv51",
-        # )(x)
-
-        x = tfkl.GlobalAveragePooling2D(name="gap")(x)
+        x = tfkl.Flatten(name="flatten")(x)
 
         x = tfkl.Dense(
             units=1024,
@@ -186,12 +160,6 @@ class QuasiVGG9(GeneralModel):
             activation="relu",
             kernel_initializer=relu_init,
         )(x)
-
-        # x = tfkl.Dense(
-        #     units=128,
-        #     activation="relu",
-        #     kernel_initializer=relu_init,
-        # )(x)
 
         output_layer = tfkl.Dense(
             units=self.build_kwargs["output_shape"],
